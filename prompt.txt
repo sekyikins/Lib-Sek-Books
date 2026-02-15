@@ -1,0 +1,141 @@
+AI DEVELOPMENT PROMPT
+
+Project: Role-Based Library Management System
+
+Context
+
+I am developing a Library Management System that demonstrates authentication, authorization, and role-based permissions. The system must start simple but be designed to scale into a fully functional application over time.
+
+I have already started working on the login interface.
+
+Core Requirements (Phase 1)
+
+Build a web-based Library Management System with three roles:
+
+1. Guest (Not Logged In)
+
+Permissions:
+
+View/search available books
+
+View book details (title, author, availability)
+
+No borrowing, no reservations, no account access
+
+Restrictions:
+
+Cannot borrow or reserve books
+
+Cannot view user-specific data
+
+2. User (Authenticated Library Member)
+
+Permissions:
+
+Log in securely
+
+Search and view books
+
+Borrow available books
+
+Return borrowed books
+
+View own borrowing history
+
+Restrictions:
+
+Cannot add/edit/delete books
+
+Cannot manage other users
+
+Cannot manage fines or system settings
+
+3. Librarian / Admin
+
+Permissions:
+
+Full access to all system features
+
+Add, update, delete books
+
+Manage book inventory and availability
+
+View all users
+
+Manage borrowing records
+
+Apply and clear fines
+
+Authentication & Authorization
+
+Secure login system
+
+Passwords must be hashed
+
+Role-based access control (RBAC)
+
+Backend must enforce permissions (not just hide UI elements)
+
+Data Models (Minimum)
+
+Design the system with these entities:
+
+Users (id, name, email, password, role)
+
+Books (id, title, author, ISBN, availability)
+
+BorrowRecords (userId, bookId, borrowDate, returnDate)
+
+Fines (userId, amount, status)
+
+Technical Constraints
+
+Use any programming language or framework
+
+Code should be modular and readable
+
+Permissions must be easy to extend later
+
+UI can be simple; functionality matters more than visuals
+
+Future Expansion (Phase 2+)
+
+The system should be designed so the following features can be added without rewriting the core logic:
+
+E-books (digital access instead of physical copies)
+
+Book reservation system
+
+Automated penalties for late returns
+
+Reports and analytics (most borrowed books, overdue users)
+
+Notifications (email or in-app)
+
+Multi-branch library support
+
+Evaluation Focus
+
+The system should clearly demonstrate:
+
+Proper separation of roles
+
+Secure authentication
+
+Correct permission enforcement
+
+Scalability and clean architecture
+
+Logical progression from basic login to full system
+
+Output Expectation
+
+Produce:
+
+A working login system
+
+Role-specific dashboards
+
+Clear permission boundaries
+
+Well-structured code ready for expansion

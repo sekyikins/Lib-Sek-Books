@@ -1,0 +1,4 @@
+/* Hide any Next.js development UI elements */
+[data-nextjs-dev-overlay] {
+  display: none !important;
+}

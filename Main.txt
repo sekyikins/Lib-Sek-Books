@@ -1,0 +1,23 @@
+2️⃣ Library Management System
+
+Simple but powerful.
+
+Roles
+
+Guest: search books
+
+User: borrow/return books
+
+Librarian (Admin): add books, manage fines
+
+Future growth
+
+E-books
+
+Reservation system
+
+Penalties
+
+Reports
+
+Good for showing permission boundaries clearly.
