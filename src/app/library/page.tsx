@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { Book } from '@/types/books';
@@ -32,7 +33,25 @@ export default function LibraryPage() {
   const [totalResults, setTotalResults] = useState(0);
   const [currentSearchQuery, setCurrentSearchQuery] = useState('');
   const [pageInput, setPageInput] = useState('');
+  const [showBackToTop, setShowBackToTop] = useState(false);
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Handle scroll to show/hide back to top button
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowBackToTop(window.scrollY > 300);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth'
+    });
+  };
 
   const fetchBooks = useCallback(async (query: string = '', page: number = 0) => {
     console.log('fetchBooks called with:', { query, page });
@@ -84,7 +103,7 @@ export default function LibraryPage() {
       setTotalResults(response.numFound);
     } catch (err) {
       console.error('API Error:', err);
-      setError('Failed to fetch books from Open Library API. Please try again later.');
+      setError('Failed to fetch books. Please try again later.');
     } finally {
       setLoading(false);
     }
@@ -116,23 +135,16 @@ export default function LibraryPage() {
       setCurrentPage(0);
       setCurrentSearchQuery(query);
       fetchBooks(query, 0);
-    }, 1500); // Wait 1.5 seconds of inactivity
+    }, 1500);
   }, [fetchBooks]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchTerm(value);
-    setError(''); // Clear error when user starts typing
+    setError('');
     
-    // Only trigger debounced search if there's a query
-    if (value.trim()) {
+    // Trigger debounced search for any input (including empty)
       debouncedSearch(value);
-    } else {
-      // Clear timeout if input is empty
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
-    }
   };
 
   const handleDownload = async (book: Book) => {
@@ -195,10 +207,11 @@ export default function LibraryPage() {
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
-          <div className="flex justify-start gap-5 items-start">
+    <>
+      <div className="min-h-screen">
+        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+          <div className="px-4 sm:px-0">
+            <div className="flex justify-start gap-5 items-start">
             <div className="mb-8 w-full">
               <h1 className="text-4xl font-bold text-gray-900 mb-2">Lib-Sek <span className="hidden md:inline">Books</span></h1>
               <div className="text-lg text-gray-600">
@@ -207,15 +220,16 @@ export default function LibraryPage() {
                   <a 
                     title='Request a book'
                     href="/book-request" 
-                    className="inline-flex items-center p-2 text-sm font-medium shadow-lg text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                    className="inline-flex items-center p-2 text-sm font-medium shadow-lg border border-indigo-600 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                   >
-                    📝 Request a Book
+                    📝 
+                    <span className="">Request a Book</span>
                   </a>
                 </div>
               </div>
             </div>
             {/* Search Bar */}
-            <div className="w-[150%] flex flex-col items-end">
+            <div className="w-[130%] flex flex-col items-end">
               <form onSubmit={handleSearch} title='Search for your prefered book' className="w-full flex items-center gap-2 px-3 py-2 mb-2 bg-white border border-gray-300 rounded-lg focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500">
                 <FiSearch className="text-gray-500 w-5 h-5" />
                 <input
@@ -227,7 +241,7 @@ export default function LibraryPage() {
                 />
               </form>
 
-              <span className="text-sm p-2 text-gray-700">
+              <span className="text-sm md:px-2 text-gray-700">
                 Discover your next favorite book
               </span>
             </div>
@@ -251,7 +265,7 @@ export default function LibraryPage() {
               {books.map((book) => (
                 <div 
                   key={book.id} 
-                  className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow cursor-pointer"
+                  className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer"
                   onClick={() => {
                     const bookData = encodeURIComponent(JSON.stringify(book));
                     window.location.href = `/book/${book.id}?book=${bookData}`;
@@ -264,7 +278,7 @@ export default function LibraryPage() {
                         src={book.coverUrl} 
                         alt={book.title}
                         fill
-                        className="object-cover"
+                        className="object-cover shadow-lg"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
                           target.style.display = 'none';
@@ -317,7 +331,7 @@ export default function LibraryPage() {
                           window.location.href = `/book-request?${params.toString()}`;
                         }}
                         title='Request this book'
-                        className="flex-1 py-2 px-4 rounded-md text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+                        className="flex-1 py-2 px-4 rounded-md text-sm shadow-lg font-medium bg-green-500 border-2 border-green-600 text-white hover:bg-green-700 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                       >
                         📥 Request
                       </button>
@@ -328,7 +342,7 @@ export default function LibraryPage() {
                             handleBorrow(book.id);
                           }}
                           title='Borrow this book'
-                          className="flex-1 py-2 px-4 rounded-md text-sm font-medium bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                          className="flex-1 py-2 px-4 rounded-md text-sm shadow-lg font-medium bg-blue-500 border-2 border-blue-600 text-white hover:bg-blue-700 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
                         >
                           📚 Borrow
                         </button>
@@ -346,7 +360,7 @@ export default function LibraryPage() {
               <button
                 onClick={() => handlePageChange(currentPage - 1)}
                 disabled={currentPage === 0}
-                className="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="px-3 py-1 rounded-md bg-white border shadow-lg border-gray-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
               >
                 Prev.
               </button>
@@ -366,7 +380,7 @@ export default function LibraryPage() {
               <button
                 onClick={() => handlePageChange(currentPage + 1)}
                 disabled={currentPage === totalPages - 1}
-                className="px-3 py-1 rounded-md bg-white border border-gray-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50"
+                className="px-3 py-1 rounded-md bg-white border shadow-lg border-gray-300 text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
               >
                 Next
               </button>
@@ -382,7 +396,7 @@ export default function LibraryPage() {
                   <a 
                     title='Request a book'
                     href="/book-request" 
-                    className="inline-flex items-center p-3 text-sm font-medium text-indigo-600 shadow-lg bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                    className="inline-flex items-center p-3 text-sm font-medium border border-indigo-600 text-indigo-600 shadow-lg bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                   >
                     📝 Request a Book
                   </a>
@@ -393,5 +407,31 @@ export default function LibraryPage() {
         </div>
       </div>
     </div>
+
+      {/* Back to Top Button */}
+      {showBackToTop && (
+        <button
+          onClick={scrollToTop}
+          className="fixed bottom-16 right-10 p-3 border-2 border-indigo-600 bg-indigo-300 text-indigo-600 rounded-full shadow-lg hover:bg-indigo-400 hover:scale-105 transition-all duration-300 z-50 flex items-center justify-center focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
+          aria-label="Back to top"
+          title='Back to top'
+        >
+          <svg
+            className="w-5 h-5"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M5 10l7-7m0 0l7 7m-7-7v18"
+            />
+          </svg>
+        </button>
+      )}
+    </>
   );
 }

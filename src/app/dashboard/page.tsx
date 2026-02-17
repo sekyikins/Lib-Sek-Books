@@ -18,7 +18,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+        <div className="px-4 sm:px-0">
           <div className="border-4 border-dashed border-gray-200 rounded-lg p-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-6">
               Dashboard
@@ -50,14 +50,14 @@ export default function Dashboard() {
             <div className="mb-6 flex flex-wrap gap-3">
               <a
                 href="/library"
-                className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors"
+                className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-green-600 text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-green-600"
               >
                 📚 Browse Library
               </a>
               {isAuthenticated && hasRolePermission('read', 'borrow-history') && (
                 <a
                   href="/borrow-history"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                  className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-blue-600 text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-green-600"
                 >
                   📖 Borrow History
                 </a>
@@ -65,7 +65,7 @@ export default function Dashboard() {
               {isAuthenticated && hasRolePermission('manage', 'inventory') && (
                 <a
                   href="/book-management"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700 transition-colors"
+                  className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-purple-600 text-sm font-medium rounded-md text-white bg-purple-500 hover:bg-purple-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-purple-600"
                 >
                   📝 Manage Books
                 </a>
@@ -139,14 +139,14 @@ export default function Dashboard() {
               {isAuthenticated ? (
                 <button
                   onClick={() => window.location.href = '/api/auth/signout'}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:cursor-pointer"
+                  className="inline-flex items-center px-4 py-2 border border-gray-500 text-sm shadow-lg font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                 >
                   Sign Out
                 </button>
               ) : (
                 <a
                   href="/auth/signin"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 hover:cursor-pointer"
+                  className="inline-flex items-center px-4 py-2 border border-indigo-700 shadow-lg text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 hover:cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700"
                 >
                   Sign In
                 </a>

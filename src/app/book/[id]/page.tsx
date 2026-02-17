@@ -46,7 +46,7 @@ export default function BookDetailsPage() {
           <div className="text-red-600 text-lg mb-4">{error || 'Book not found'}</div>
           <button
             onClick={() => window.history.back()}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm shadow-lg font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
           >
             <FiArrowLeft className="mr-2" />
             Back to Library
@@ -57,14 +57,14 @@ export default function BookDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 py-6 sm:px-0">
+        <div className="px-4 sm:px-0">
           {/* Back Button */}
           <div className="mb-6">
             <button
               onClick={() => window.history.back()}
-              className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+              className="inline-flex items-center px-4 py-2 shadow-lg border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-colors"
             >
               <FiArrowLeft className="mr-2" />
               Back to Library
@@ -72,13 +72,13 @@ export default function BookDetailsPage() {
           </div>
 
           {/* Book Details Card */}
-          <div className="bg-white shadow-lg rounded-lg overflow-hidden">
+          <div className="bg-blue-50 shadow-lg rounded-lg overflow-hidden">
             <div className="md:flex">
               {/* Book Cover */}
-              <div className="md:w-1/3 bg-gray-200 relative h-96 md:h-auto">
+              <div className="md:w-1/3 bg-gray-200 relative h-96 md:h-auto shadow-lg">
                 {book.coverUrl ? (
                   <Image 
-                    src={book.coverUrl} 
+                    src={book.coverUrl}
                     alt={book.title}
                     fill
                     className="object-cover"
@@ -106,23 +106,23 @@ export default function BookDetailsPage() {
                   {/* Metadata */}
                   <div className="flex flex-wrap gap-2 mb-4">
                     {book.language && (
-                      <span className="inline-block px-3 py-1 text-sm font-bold bg-gray-100 text-gray-700 rounded-full">
+                      <span className="inline-block px-3 py-1 text-sm font-bold bg-gray-100 text-gray-700 rounded-2xl">
                         🌐 {book.language}
                       </span>
                     )}
-                    {book.genre && (
-                      <span className="inline-block px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
-                        📚 {book.genre}
-                      </span>
-                    )}
                     {book.publishedDate && (
-                      <span className="inline-block px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-full">
+                      <span className="inline-block px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-2xl">
                         📅 {new Date(book.publishedDate).getFullYear()}
                       </span>
                     )}
                     {book.isbn && (
-                      <span className="inline-block px-3 py-1 text-sm font-medium bg-purple-100 text-purple-800 rounded-full">
+                      <span className="inline-block px-3 py-1 text-sm font-medium bg-purple-100 text-purple-800 rounded-2xl">
                         ISBN: {book.isbn}
+                      </span>
+                    )}
+                    {book.genre && (
+                      <span className="flex gap-1 px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-2xl">
+                        📚 <span>{book.genre}</span>
                       </span>
                     )}
                   </div>
@@ -161,15 +161,9 @@ export default function BookDetailsPage() {
                       });
                       window.location.href = `/book-request?${params.toString()}`;
                     }}
-                    className="flex-1 py-3 px-6 rounded-md text-sm font-medium bg-green-600 text-white hover:bg-green-700 transition-colors"
+                    className="flex-1 py-3 px-6 rounded-md text-sm border-2 border-green-600 shadow-lg font-medium bg-green-500 text-white hover:bg-green-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                   >
                     📥 Request This Book
-                  </button>
-                  <button
-                    onClick={() => window.location.href = '/library'}
-                    className="px-6 py-3 rounded-md text-sm font-medium border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                  >
-                    Browse More Books
                   </button>
                 </div>
               </div>
@@ -178,7 +172,7 @@ export default function BookDetailsPage() {
 
           {/* Additional Information */}
           <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-blue-50 p-6 rounded-lg shadow">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Book Details</h3>
               <dl className="space-y-2">
                 {book.id && (
@@ -208,7 +202,7 @@ export default function BookDetailsPage() {
               </dl>
             </div>
 
-            <div className="bg-white p-6 rounded-lg shadow">
+            <div className="bg-blue-50 p-6 rounded-lg shadow">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Library Information</h3>
               <dl className="space-y-2">
                 {book.createdAt && (

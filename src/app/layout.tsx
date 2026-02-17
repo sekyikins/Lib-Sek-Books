@@ -36,6 +36,7 @@ export default function RootLayout({
         <AuthProvider>
           {children}
         </AuthProvider>
+        <div className="relative text-center text-gray-500 -mt-6">@Mr. Sekyi</div>
       </body>
     </html>
   );

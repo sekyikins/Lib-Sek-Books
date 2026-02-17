@@ -21,6 +21,14 @@ export async function GET(request: NextRequest) {
       }
     });
 
+    // Handle 422 status (invalid query) gracefully by returning empty results
+    if (response.status === 422) {
+      return NextResponse.json(
+        { docs: [], numFound: 0, start: 0, numFoundExact: true },
+        { status: 200 }
+      );
+    }
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
