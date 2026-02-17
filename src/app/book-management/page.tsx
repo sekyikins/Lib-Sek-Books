@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Role } from '@/types/auth';
+import { useRouter } from 'next/navigation';
+import { FiPlus } from 'react-icons/fi';
 
 type ManagedBook = {
   id: number;
@@ -13,17 +15,11 @@ type ManagedBook = {
   added_at?: string;
 };
 
-type BookPayload = {
-  title: string;
-  author: string;
-  file_link: string;
-};
 
 export default function BookManagementPage() {
   const { isLoading } = useAuth();
+  const router = useRouter();
   const [books, setBooks] = useState<ManagedBook[]>([]);
-  const [isCreating, setIsCreating] = useState(false);
-  const [editingBook, setEditingBook] = useState<ManagedBook | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -49,17 +45,6 @@ export default function BookManagementPage() {
     fetchBooks();
   }, []);
 
-  const handleCreate = () => {
-    setIsCreating(true);
-    setEditingBook(null);
-    setError('');
-  };
-
-  const handleEdit = (book: ManagedBook) => {
-    setEditingBook(book);
-    setIsCreating(false);
-    setError('');
-  };
 
   const handleDelete = async (bookId: number) => {
     if (!confirm('Are you sure you want to delete this book?')) {
@@ -82,53 +67,6 @@ export default function BookManagementPage() {
     }
   };
 
-  const handleSave = async (bookData: BookPayload) => {
-    setError('');
-
-    try {
-      if (isCreating) {
-        const response = await fetch('/api/books-admin', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(bookData),
-        });
-
-        const result = await response.json();
-        if (!response.ok) {
-          setError(result.error || 'Failed to create book.');
-          return;
-        }
-      } else if (editingBook) {
-        const response = await fetch(`/api/books-admin/${editingBook.id}`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(bookData),
-        });
-
-        const result = await response.json();
-        if (!response.ok) {
-          setError(result.error || 'Failed to update book.');
-          return;
-        }
-      }
-
-      setIsCreating(false);
-      setEditingBook(null);
-      await fetchBooks();
-    } catch {
-      setError('Failed to save book.');
-    }
-  };
-
-  const handleCancel = () => {
-    setIsCreating(false);
-    setEditingBook(null);
-    setError('');
-  };
 
   if (isLoading) {
     return (
@@ -149,17 +87,20 @@ export default function BookManagementPage() {
                 <h1 className="text-3xl font-bold text-gray-900">Book Management</h1>
                 <div className="space-x-4">
                   <button
-                    onClick={handleCreate}
-                    className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-green-600 text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600 focus:ring-2 focus:ring-offset-2 focus:ring-green-600"
+                    title='Add Books'
+                    onClick={() => router.push('/add-books')}
+                    className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-blue-600 text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
                   >
-                    Add New Book
+                    <FiPlus className="mr-2" />
+                    Add Books
                   </button>
-                  <a
-                    href="/dashboard"
+                  <button
+                    title='Back to Dashboard'
+                    onClick={() => router.replace('/dashboard')}
                     className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-gray-600 text-sm font-medium rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-offset-2 focus:ring-gray-600"
                   >
                     Back to Dashboard
-                  </a>
+                  </button>
                 </div>
               </div>
 
@@ -169,23 +110,11 @@ export default function BookManagementPage() {
                 </div>
               )}
 
-              {(isCreating || editingBook) && (
-                <div className="bg-white p-6 rounded-lg shadow mb-6">
-                  <h2 className="text-xl font-semibold mb-4">
-                    {isCreating ? 'Add New Book' : 'Edit Book'}
-                  </h2>
-                  <BookForm
-                    book={editingBook}
-                    onSave={handleSave}
-                    onCancel={handleCancel}
-                  />
-                </div>
-              )}
 
               <div className="bg-white shadow rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
                   <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                    Lib-Sek Books Inventory ({} Books)
+                    Lib-Sek Books Inventory ({books.length} Books)
                   </h3>
 
                   {loading ? (
@@ -239,12 +168,14 @@ export default function BookManagementPage() {
                               </td>
                               <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2 align-top">
                                 <button
-                                  onClick={() => handleEdit(book)}
+                                  title='Edit Book'
+                                  onClick={() => router.push(`/add-books?edit=${book.id}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author)}&link=${encodeURIComponent(book.file_link)}`)}
                                   className="text-indigo-600 hover:text-indigo-900"
                                 >
                                   Edit
                                 </button>
                                 <button
+                                  title='Delete From Library'
                                   onClick={() => handleDelete(book.id)}
                                   className="text-red-600 hover:text-red-900"
                                 >
@@ -267,76 +198,3 @@ export default function BookManagementPage() {
   );
 }
 
-interface BookFormProps {
-  book?: ManagedBook | null;
-  onSave: (bookData: BookPayload) => void;
-  onCancel: () => void;
-}
-
-function BookForm({ book, onSave, onCancel }: BookFormProps) {
-  const [formData, setFormData] = useState<BookPayload>({
-    title: book?.title || '',
-    author: book?.author || '',
-    file_link: book?.file_link || '',
-  });
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onSave(formData);
-  };
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Title *</label>
-          <input
-            type="text"
-            required
-            value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700">Author *</label>
-          <input
-            type="text"
-            required
-            value={formData.author}
-            onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          />
-        </div>
-      </div>
-
-      <div>
-        <label className="block text-sm font-medium text-gray-700">File Link *</label>
-        <input
-          type="url"
-          required
-          value={formData.file_link}
-          onChange={(e) => setFormData({ ...formData, file_link: e.target.value })}
-          placeholder="https://drive.google.com/file/d/FILE_ID/view?usp=sharing"
-          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        />
-      </div>
-
-      <div className="flex space-x-4">
-        <button
-          type="submit"
-          className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-indigo-700 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700"
-        >
-          Save
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-gray-600 text-sm font-medium rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-offset-2 focus:ring-gray-600"
-        >
-          Cancel
-        </button>
-      </div>
-    </form>
-  );
-}

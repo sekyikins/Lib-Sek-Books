@@ -152,5 +152,41 @@
     "email": "benjaminkofi.sekyi@gmail.com",
     "userType": "guest",
     "status": "available"
+  },
+  {
+    "timestamp": "2026-02-17T09:03:33.951Z",
+    "title": "the art of lazine",
+    "author": "mindset",
+    "description": "",
+    "email": "benjaminkofi.sekyi@gmail.com",
+    "userType": "ADMIN",
+    "status": "available"
+  },
+  {
+    "timestamp": "2026-02-17T09:05:46.415Z",
+    "title": "How I deal with life",
+    "author": "Chris Well",
+    "description": "",
+    "email": "benjaminkofi.sekyi@gmail.com",
+    "userType": "ADMIN",
+    "status": "not_found"
+  },
+  {
+    "timestamp": "2026-02-17T09:20:05.589Z",
+    "title": "atomic habits",
+    "author": "James clear",
+    "description": "What a cool book i read.",
+    "email": "benjaminkofi.sekyi@gmail.com",
+    "userType": "ADMIN",
+    "status": "available"
+  },
+  {
+    "timestamp": "2026-02-17T09:22:22.667Z",
+    "title": "Atomic",
+    "author": "James clear",
+    "description": "",
+    "email": "benjaminkofi.sekyi@gmail.com",
+    "userType": "ADMIN",
+    "status": "available"
   }
 ]

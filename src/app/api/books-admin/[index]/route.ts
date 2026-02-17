@@ -55,6 +55,29 @@ function parseIndex(raw: string): number | null {
   return value;
 }
 
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ index: string }> }
+) {
+  try {
+    const { index } = await params;
+    const bookIndex = parseIndex(index);
+    if (bookIndex === null) {
+      return NextResponse.json({ error: 'Invalid book index.' }, { status: 400 });
+    }
+
+    const books = await readBooks();
+    if (bookIndex >= books.length) {
+      return NextResponse.json({ error: 'Book not found.' }, { status: 404 });
+    }
+
+    return NextResponse.json({ book: { id: bookIndex, ...books[bookIndex] } });
+  } catch (error) {
+    console.error('books-admin GET error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}
+
 export async function PUT(
   request: NextRequest,
   { params }: { params: Promise<{ index: string }> }

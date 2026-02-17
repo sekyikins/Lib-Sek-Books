@@ -18,7 +18,7 @@ type RequestEntry = {
   description?: string;
   email: string;
   userType: string;
-  status: 'available' | 'not_found' | 'delivery_failed';
+  status: 'available' | 'not_found' | 'delivery_failed' | 'delivered';
 };
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
@@ -145,6 +145,7 @@ async function sendTelegramMessage(chatId: string, text: string): Promise<boolea
       body: JSON.stringify({
         chat_id: chatId,
         text,
+        parse_mode: 'HTML',
       }),
     });
 
@@ -189,21 +190,33 @@ async function logRequest(entry: RequestEntry) {
 
 function formatNotFoundAdminMessage(title: string, author: string, email: string, description: string): string {
   return [
-    'New book request (not found):',
-    `Title: ${title || '-'}`,
-    `Author: ${author || '-'}`,
-    `Email: ${email || '-'}`,
-    `Details: ${description || '-'}`,
+    '<b>NEW BOOK REQUEST</b>',
+    '<b>🚫 NOT FOUND 🚫</b>',
+    '',
+    '<i>📚 Book Details:</i>',
+    '<b>📖 Title:</b> <code>' + (title || '-') + '</code>',
+    '<b>✍️ Author:</b> <code>' + (author || '-') + '</code>',
+    '<b>📧 Email:</b> <code>' + (email || '-') + '</code>',
+    '<b>📝 Details:</b> <i>' + (description || '-') + '</i>',
+    '',
+    '❌ <u>Status</u>: <b>Book not found in library</b>',
+    '🔍 <u>Action</u>: <i>Please search and add this book to the collection</i>'
   ].join('\n');
 }
 
 function formatAvailableAdminMessage(title: string, author: string, email: string, description: string): string {
   return [
-    'New book request (available):',
-    `Title: ${title || '-'}`,
-    `Author: ${author || '-'}`,
-    `Email: ${email || '-'}`,
-    `Details: ${description || '-'}`,
+    '<b>NEW BOOK REQUEST</b>',
+    '<b>✅ AVAILABLE ✅</b>',
+    '',
+    '<i>📚 Book Details:</i>',
+    '<b>📖 Title:</b> <code>' + (title || '-') + '</code>',
+    '<b>✍️ Author:</b> <code>' + (author || '-') + '</code>',
+    '<b>📧 Email:</b> <code>' + (email || '-') + '</code>',
+    '<b>📝 Details:</b> <i>' + (description || '-') + '</i>',
+    '',
+    '✅ <u>Status</u>: <b>Book found and available for delivery</b>',
+    '🚀 <u>Action</u>: <i>Processing delivery...</i>'
   ].join('\n');
 }
 
@@ -480,7 +493,7 @@ export async function POST(request: NextRequest) {
         description,
         email,
         userType,
-        status: succeeded ? 'available' : 'delivery_failed',
+        status: succeeded ? 'delivered' : 'delivery_failed',
       };
       await logRequest(entry);
 
@@ -510,14 +523,18 @@ export async function POST(request: NextRequest) {
       await sendTelegramMessage(
         ADMIN_CHAT_ID,
         [
-          'Delivery completed.',
-          `Title: ${title || '-'}`,
-          `Author: ${author || '-'}`,
-          `Email: ${email || '-'}`,
-          `Telegram Upload: ok`,
-          `Email Send: accepted (queued)`,
-          `Email Provider: ${emailResult.provider || '-'}`,
-          `Email Message ID: ${emailResult.messageId || '-'}`,
+          '<b>🎉 DELIVERY COMPLETED 🎉</b>',
+          '',
+          '<i>📚 Book Details:</i>',
+          '<b>📖 Title:</b> <code>' + (title || '-') + '</code>',
+          '<b>✍️ Author:</b> <code>' + (author || '-') + '</code>',
+          '<b>📧 Email:</b> <code>' + (email || '-') + '</code>',
+          '',
+          '<i>📋 Delivery Status:</i>',
+          '📤 <b>Telegram Upload:</b> <code>✅ ok</code>',
+          '📧 <b>Email Send:</b> <code>✅ accepted (queued)</code>',
+          '🔌 <b>Email Provider:</b> <code>' + (emailResult.provider || '-') + '</code>',
+          '🆔 <b>Email Message ID:</b> <code>' + (emailResult.messageId || '-') + '</code>',
         ].join('\n')
       );
 

@@ -3,6 +3,7 @@
 import React from 'react';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 import { Book } from '@/types/books';
 import { OpenLibraryAPI } from '@/services/openlibrary';
 import { FiSearch } from 'react-icons/fi';
@@ -24,6 +25,7 @@ const truncateText = (text: string, maxLength: number): string => {
 
 export default function LibraryPage() {
   const { isAuthenticated, isLoading, hasRolePermission } = useAuth();
+  const router = useRouter();
   const [books, setBooks] = useState<Book[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [loading, setLoading] = useState(false);
@@ -217,14 +219,14 @@ export default function LibraryPage() {
               <div className="text-lg text-gray-600">
                 <div className="flex items-center gap-3">
                     <span className="hidden md:inline text-blue-600 font-medium"> ({totalResults} books found)</span>
-                  <a 
+                  <button
                     title='Request a book'
-                    href="/book-request" 
+                    onClick={() => router.push('/book-request')}
                     className="inline-flex items-center p-2 text-sm font-medium shadow-lg border border-indigo-600 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                   >
                     📝 
                     <span className="">Request a Book</span>
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -278,6 +280,7 @@ export default function LibraryPage() {
                         src={book.coverUrl} 
                         alt={book.title}
                         fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                         className="object-cover shadow-lg"
                         onError={(e) => {
                           const target = e.target as HTMLImageElement;
@@ -328,7 +331,7 @@ export default function LibraryPage() {
                             author: book.author,
                             description: book.description || ''
                           });
-                          window.location.href = `/book-request?${params.toString()}`;
+                          router.push(`/book-request?${params.toString()}`);
                         }}
                         title='Request this book'
                         className="flex-1 py-2 px-4 rounded-md text-sm shadow-lg font-medium bg-green-500 border-2 border-green-600 text-white hover:bg-green-700 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
@@ -393,13 +396,13 @@ export default function LibraryPage() {
               {currentSearchQuery && (
                 <div className="mt-4">
                   <p className="text-gray-600 mb-4">Ask for it to be sent to you.</p>
-                  <a 
+                  <button 
                     title='Request a book'
-                    href="/book-request" 
+                    onClick={() => router.push('/book-request')}
                     className="inline-flex items-center p-3 text-sm font-medium border border-indigo-600 text-indigo-600 shadow-lg bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600"
                   >
                     📝 Request a Book
-                  </a>
+                  </button>
                 </div>
               )}
             </div>

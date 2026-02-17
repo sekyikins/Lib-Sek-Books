@@ -2,11 +2,12 @@
 
 import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 export default function BookRequestPage() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [succeeded, setSucceeded] = useState(false);
 
@@ -94,13 +95,28 @@ export default function BookRequestPage() {
                     Your request has been sent to the bot. If available, the book will be sent to your email.
                   </p>
                   <p className="text-gray-600" >Check your spam if you don&apos;t receive any email.</p>
-                  <button
-                    type="button"
-                    onClick={() => (window.location.href = '/library')}
-                    className="mt-4 inline-flex items-center px-4 py-2 shadow-lg border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-100 focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
-                  >
-                    Back to Library
-                  </button>
+                  <div className='flex justify-center gap-2 w-full'>
+                    <button
+                      type="button"
+                      onClick={() => router.replace('/library')}
+                      className="mt-4 inline-flex items-center px-4 py-2 shadow-lg border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-100 focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
+                    >
+                      Back to Library
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSucceeded(false);
+                        setTitle('');
+                        setAuthor('');
+                        setDescription('');
+                        setError('');
+                      }}
+                      className="mt-4 inline-flex items-center px-4 py-2 shadow-lg border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-100 focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
+                    >
+                      Request Again
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <form onSubmit={handleFormSubmit} className="space-y-4">

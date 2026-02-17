@@ -1,9 +1,11 @@
 'use client';
 
 import { useAuth } from '@/hooks/useAuth';
+import { useRouter } from 'next/navigation';
 
 export default function Dashboard() {
   const { user, userRole, isAdmin, isUser, hasRolePermission, isAuthenticated, isLoading } = useAuth();
+  const router = useRouter();
 
   // Show loading state while checking authentication to prevent content flash
   if (isLoading) {
@@ -40,7 +42,7 @@ export default function Dashboard() {
                     Welcome, Guest!
                   </p>
                   <p className="text-sm text-gray-500">
-                    You are viewing this page as a guest. <a href="/auth/signin" className="text-blue-600 hover:underline">Sign in</a> for full access.
+                    You are viewing this page as a guest. <button title="Sign in" onClick={() => router.push('/auth/signin')} className="text-blue-600 hover:underline">Sign in</button> for full access.
                   </p>
                 </>
               )}
@@ -48,27 +50,30 @@ export default function Dashboard() {
 
             {/* Library Navigation */}
             <div className="mb-6 flex flex-wrap gap-3">
-              <a
-                href="/library"
+              <button
+                title="Browse Lib-Sek Book"
+                onClick={() => router.push('/library')}
                 className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-green-600 text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-green-600"
               >
                 📚 Browse Library
-              </a>
+              </button>
               {isAuthenticated && hasRolePermission('read', 'borrow-history') && (
-                <a
-                  href="/borrow-history"
+                <button
+                  title="View Borrow History"
+                  onClick={() => router.push('/borrow-history')}
                   className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-blue-600 text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-green-600"
                 >
                   📖 Borrow History
-                </a>
+                </button>
               )}
               {isAuthenticated && hasRolePermission('manage', 'inventory') && (
-                <a
-                  href="/book-management"
+                <button
+                  title='Manage Lib-Sek Books'
+                  onClick={() => router.push('/book-management')}
                   className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-purple-600 text-sm font-medium rounded-md text-white bg-purple-500 hover:bg-purple-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-purple-600"
                 >
                   📝 Manage Books
-                </a>
+                </button>
               )}
             </div>
 
@@ -129,27 +134,30 @@ export default function Dashboard() {
             {/* Navigation */}
             <div className="mt-8 space-x-4">
               {isAuthenticated && isAdmin && (
-                <a
-                  href="/admin"
+                <button
+                  title='Admin Panel'
+                  onClick={() => router.push('/admin')}
                   className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 hover:cursor-pointer"
                 >
                   Admin Panel
-                </a>
+                </button>
               )}
               {isAuthenticated ? (
                 <button
-                  onClick={() => window.location.href = '/api/auth/signout'}
+                  title='Sign Out'
+                  onClick={() => router.push('/api/auth/signout')}
                   className="inline-flex items-center px-4 py-2 border border-gray-500 text-sm shadow-lg font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                 >
                   Sign Out
                 </button>
               ) : (
-                <a
-                  href="/auth/signin"
+                <button
+                  title='Sign In'
+                  onClick={() => router.push('/auth/signin')}
                   className="inline-flex items-center px-4 py-2 border border-indigo-700 shadow-lg text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 hover:cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700"
                 >
                   Sign In
-                </a>
+                </button>
               )}
             </div>
           </div>

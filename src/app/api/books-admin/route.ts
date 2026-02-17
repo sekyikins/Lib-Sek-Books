@@ -62,29 +62,72 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const title = typeof body?.title === 'string' ? body.title.trim() : '';
-    const author = typeof body?.author === 'string' ? body.author.trim() : '';
-    const fileLink = typeof body?.file_link === 'string' ? body.file_link.trim() : '';
+    
+    // Handle single book (existing functionality)
+    if (body.title || body.author || body.file_link) {
+      const title = typeof body?.title === 'string' ? body.title.trim() : '';
+      const author = typeof body?.author === 'string' ? body.author.trim() : '';
+      const fileLink = typeof body?.file_link === 'string' ? body.file_link.trim() : '';
 
-    if (!title || !author || !fileLink) {
-      return NextResponse.json(
-        { error: 'title, author, and file_link are required.' },
-        { status: 400 }
-      );
+      if (!title || !author || !fileLink) {
+        return NextResponse.json(
+          { error: 'title, author, and file_link are required.' },
+          { status: 400 }
+        );
+      }
+
+      const newBook: BookJsonEntry = {
+        title,
+        author,
+        file_link: fileLink,
+        added_at: new Date().toISOString(),
+      };
+
+      const books = await readBooks();
+      books.push(newBook);
+
+      await writeBooks(books);
+      return NextResponse.json({ book: { id: books.length - 1, ...newBook } }, { status: 201 });
+    }
+    
+    // Handle multiple books (new functionality)
+    if (body.books && Array.isArray(body.books)) {
+      const newBooks: BookJsonEntry[] = [];
+      
+      for (const bookData of body.books) {
+        const title = typeof bookData?.title === 'string' ? bookData.title.trim() : '';
+        const author = typeof bookData?.author === 'string' ? bookData.author.trim() : '';
+        const fileLink = typeof bookData?.file_link === 'string' ? bookData.file_link.trim() : '';
+
+        if (!title || !author || !fileLink) {
+          return NextResponse.json(
+            { error: 'All books must have title, author, and file_link.' },
+            { status: 400 }
+          );
+        }
+
+        newBooks.push({
+          title,
+          author,
+          file_link: fileLink,
+          added_at: new Date().toISOString(),
+        });
+      }
+
+      const books = await readBooks();
+      books.push(...newBooks);
+
+      await writeBooks(books);
+      return NextResponse.json({ 
+        message: `Successfully added ${newBooks.length} books`,
+        books: withIds(newBooks)
+      }, { status: 201 });
     }
 
-    const newBook: BookJsonEntry = {
-      title,
-      author,
-      file_link: fileLink,
-      added_at: new Date().toISOString(),
-    };
-
-    const books = await readBooks();
-    books.push(newBook);
-
-    await writeBooks(books);
-    return NextResponse.json({ book: { id: books.length - 1, ...newBook } }, { status: 201 });
+    return NextResponse.json(
+      { error: 'Invalid request format. Provide either a single book or an array of books.' },
+      { status: 400 }
+    );
   } catch (error) {
     console.error('books-admin POST error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

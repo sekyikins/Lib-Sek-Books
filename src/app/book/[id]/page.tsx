@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Book } from '@/types/books';
 import { FiArrowLeft } from 'react-icons/fi';
 
 export default function BookDetailsPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [book, setBook] = useState<Book | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -45,7 +46,7 @@ export default function BookDetailsPage() {
         <div className="text-center">
           <div className="text-red-600 text-lg mb-4">{error || 'Book not found'}</div>
           <button
-            onClick={() => window.history.back()}
+            onClick={() => router.back()}
             className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm shadow-lg font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
           >
             <FiArrowLeft className="mr-2" />
@@ -63,7 +64,7 @@ export default function BookDetailsPage() {
           {/* Back Button */}
           <div className="mb-6">
             <button
-              onClick={() => window.history.back()}
+              onClick={() => router.back()}
               className="inline-flex items-center px-4 py-2 shadow-lg border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-colors"
             >
               <FiArrowLeft className="mr-2" />
@@ -81,6 +82,7 @@ export default function BookDetailsPage() {
                     src={book.coverUrl}
                     alt={book.title}
                     fill
+                    sizes="(max-width: 768px) 100vw, 33vw"
                     className="object-cover"
                     onError={(e) => {
                       const target = e.target as HTMLImageElement;
@@ -159,7 +161,7 @@ export default function BookDetailsPage() {
                         author: book.author,
                         description: book.description || ''
                       });
-                      window.location.href = `/book-request?${params.toString()}`;
+                      router.push(`/book-request?${params.toString()}`);
                     }}
                     className="flex-1 py-3 px-6 rounded-md text-sm border-2 border-green-600 shadow-lg font-medium bg-green-500 text-white hover:bg-green-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                   >

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Role } from '@/types/auth';
+import { useRouter } from 'next/navigation';
 
 interface User {
   id: string;
@@ -12,6 +13,7 @@ interface User {
 }
 
 export default function AdminPanel() {
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([
     { id: '1', name: 'Admin User', email: 'admin@example.com', role: Role.ADMIN },
     { id: '2', name: 'Regular User', email: 'user@example.com', role: Role.USER },
@@ -73,12 +75,12 @@ export default function AdminPanel() {
                   >
                     Create User
                   </button>
-                  <a
-                    href="/dashboard"
+                  <button
+                    onClick={() => router.replace('/dashboard')}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
                   >
                     Back to Dashboard
-                  </a>
+                  </button>
                 </div>
               </div>
 
