@@ -1,6 +1,6 @@
 # Library Management System
 
-A Next.js-based library management system built for deployment on Netlify.
+A Next.js-based library management system built for deployment on Vercel.
 
 ## Features
 
@@ -18,34 +18,34 @@ A Next.js-based library management system built for deployment on Netlify.
 - **Styling**: Tailwind CSS
 - **Authentication**: NextAuth.js
 - **Database**: Prisma with JSON file storage
-- **Deployment**: Netlify
+- **Deployment**: Vercel
 
 ## Environment Variables
 
 Create a `.env.local` file with the following variables:
 
 ```env
-NEXTAUTH_URL=https://your-domain.netlify.app
+NEXTAUTH_URL=https://your-domain.vercel.app
 NEXTAUTH_SECRET=your-secret-key
 GOOGLE_OAUTH_CLIENT_ID=your-google-oauth-client-id
 GOOGLE_OAUTH_CLIENT_SECRET=your-google-oauth-client-secret
-GOOGLE_REDIRECT_URI=https://your-domain.netlify.app/api/auth/callback/google
+GOOGLE_REDIRECT_URI=https://your-domain.vercel.app/api/auth/callback/google
 ```
 
 ## Deployment
 
-### Netlify Deployment
+### Vercel Deployment
 
-1. Connect your repository to Netlify
-2. Set environment variables in Netlify dashboard
-3. Deploy - Netlify will automatically build and deploy
+1. Connect your repository to Vercel
+2. Set environment variables in Vercel dashboard
+3. Deploy - Vercel will automatically build and deploy
 
 ### Build Configuration
 
-The project is configured for Netlify deployment with:
+The project is configured for Vercel deployment with:
 
 - **Build Command**: `npm run build`
-- **Publish Directory**: `.next`
+- **Output Directory**: `.next`
 - **Node Version**: 20
 
 ## Local Development
@@ -98,3 +98,4 @@ src/
 - The project uses file-based storage for simplicity
 - Google Drive integration requires OAuth setup
 - All API routes are server-side rendered for security
+- Optimized for Vercel's serverless functions
