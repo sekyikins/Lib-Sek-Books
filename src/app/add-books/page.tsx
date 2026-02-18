@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Role } from '@/types/auth';
@@ -24,7 +24,7 @@ interface LinkBookData {
 
 type InputMode = 'link' | 'file';
 
-export default function AddBooksPage() {
+function AddBooksContent() {
   const { isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -391,7 +391,7 @@ export default function AddBooksPage() {
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
           <div className="px-4 sm:px-0">
-            <div className="border-4 border-dashed border-gray-200 rounded-lg p-8">
+            <div className="border-4 border-dashed border-gray-200 rounded-lg p-4 md:p-8">
               <div className="flex justify-between items-center mb-6">
                 <div>
                   <h1 className="text-3xl font-bold text-gray-900">Add New Books</h1>
@@ -403,7 +403,7 @@ export default function AddBooksPage() {
                     onClick={() => router.replace('/book-management')}
                     className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-gray-600 text-sm font-medium rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-offset-2 focus:ring-gray-600"
                   >
-                    Back to Management
+                    Back&nbsp;<span className='hidden md:inline'>to Management</span>
                   </button>
                 </div>
               </div>
@@ -430,7 +430,7 @@ export default function AddBooksPage() {
               )}
 
               {editingId && (
-                <div className="mb-6 bg-white p-6 rounded-lg shadow-md border border-gray-200">
+                <div className="mb-6 bg-white p-5 rounded-lg shadow-md border border-gray-200">
                   <h2 className="text-xl font-semibold text-gray-900 mb-4">
                     Edit Book
                   </h2>
@@ -781,22 +781,22 @@ export default function AddBooksPage() {
                       Close All
                     </button>
 
-                  <div className="space-x-4">
+                  <div className="space-x-4 flex">
                     <button
-                    title='Add Book'
-                    type="button"
-                    onClick={addNewBook}
-                    className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-green-600 text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600 focus:ring-2 focus:ring-offset-2 focus:ring-green-600"
-                  >
-                    <FiPlus className="mr-2" />
-                    Add Another Book
-                  </button>
+                      title='Add Book'
+                      type="button"
+                      onClick={addNewBook}
+                      className="inline-flex items-center px-2 md:px-4 py-2 shadow-lg border-2 border-green-600 text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600 focus:ring-2 focus:ring-offset-2 focus:ring-green-600"
+                    >
+                      <FiPlus className="mr-2" />
+                      Add&nbsp;<span className='hidden md:inline'>Another</span>&nbsp;Book
+                    </button>
                     
                     <button
                       title='Upload Book(s)'
                       type="submit"
                       disabled={uploading}
-                      className="inline-flex items-center px-6 py-2 shadow-lg border-2 border-indigo-700 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="inline-flex items-center px-2 md:px-6 py-2 shadow-lg border-2 border-indigo-700 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {uploading ? (
                         <>
@@ -806,7 +806,7 @@ export default function AddBooksPage() {
                       ) : (
                         <>
                           <FiUpload className="mr-2" />
-                          Upload Books
+                          Upload&nbsp;<span className='hidden md:inline'>Books</span>
                         </>
                       )}
                     </button>
@@ -819,5 +819,13 @@ export default function AddBooksPage() {
         </div>
       </div>
     </ProtectedRoute>
+  );
+}
+
+export default function AddBooksPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <AddBooksContent />
+    </Suspense>
   );
 }

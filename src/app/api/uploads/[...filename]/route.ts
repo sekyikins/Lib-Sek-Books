@@ -5,10 +5,11 @@ import { existsSync } from 'fs';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { filename: string[] } }
+  { params }: { params: Promise<{ filename: string[] }> }
 ) {
   try {
-    const filename = params.filename.join('/');
+    const resolvedParams = await params;
+    const filename = resolvedParams.filename.join('/');
     const uploadsDir = join(process.cwd(), 'uploads');
     const filePath = join(uploadsDir, filename);
 

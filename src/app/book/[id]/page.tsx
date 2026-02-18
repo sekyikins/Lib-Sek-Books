@@ -1,12 +1,12 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Book } from '@/types/books';
 import { FiArrowLeft } from 'react-icons/fi';
 
-export default function BookDetailsPage() {
+function BookDetailsContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [book, setBook] = useState<Book | null>(null);
@@ -231,5 +231,13 @@ export default function BookDetailsPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BookDetailsPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BookDetailsContent />
+    </Suspense>
   );
 }

@@ -80,12 +80,12 @@ export default function BookManagementPage() {
   return (
     <ProtectedRoute requiredRole={Role.ADMIN}>
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
           <div className="px-4 py-6 sm:px-0">
-            <div className="border-4 border-dashed border-gray-200 rounded-lg p-8">
-              <div className="flex justify-between items-center mb-6">
+            <div className="border-4 border-dashed border-gray-200 rounded-lg p-4 md:p-8">
+              <div className="flex justify-between flex-col md:flex-row items-center mb-6 gap-2">
                 <h1 className="text-3xl font-bold text-gray-900">Book Management</h1>
-                <div className="space-x-4">
+                <div className="flex justify-around space-x-4">
                   <button
                     title='Add Books'
                     onClick={() => router.push('/add-books')}
@@ -99,7 +99,7 @@ export default function BookManagementPage() {
                     onClick={() => router.replace('/dashboard')}
                     className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-gray-600 text-sm font-medium rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-offset-2 focus:ring-gray-600"
                   >
-                    Back to Dashboard
+                    <span className='hidden md:inline'>Back to</span>&nbsp; Dashboard
                   </button>
                 </div>
               </div>
@@ -111,7 +111,6 @@ export default function BookManagementPage() {
               )}
 
 
-              <div className="bg-white shadow rounded-lg">
                 <div className="px-4 py-5 sm:p-6">
                   <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
                     Lib-Sek Books Inventory ({books.length} Books)
@@ -119,11 +118,11 @@ export default function BookManagementPage() {
 
                   {loading ? (
                     <div className="text-center py-12">
-                      <div className="text-lg text-gray-600">Loading books...</div>
+                      <div className="text-lg text-blue-500">Loading books...</div>
                       <div className="border-b-3 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
                     </div>
                   ) : (
-                    <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
+                    <div className="overflow-y-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
                       <table className="min-w-full divide-y divide-gray-300">
                         <thead className="bg-gray-50">
                           <tr>
@@ -133,7 +132,7 @@ export default function BookManagementPage() {
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Author
                             </th>
-                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                            <th className="w-[10%] py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               File Link
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -153,7 +152,7 @@ export default function BookManagementPage() {
                               <td className="px-6 py-4 text-sm text-gray-500 align-top">
                                 {book.author}
                               </td>
-                              <td className="px-6 py-4 text-sm text-gray-500 align-top break-all">
+                              <td className="py-4 text-sm text-gray-500 align-top break-all">
                                 <a
                                   href={book.file_link}
                                   target="_blank"
@@ -166,18 +165,18 @@ export default function BookManagementPage() {
                               <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 align-top">
                                 {book.added_at ? new Date(book.added_at).toLocaleString() : '-'}
                               </td>
-                              <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2 align-top">
+                              <td className="flex justify-around py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                 <button
                                   title='Edit Book'
                                   onClick={() => router.push(`/add-books?edit=${book.id}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author)}&link=${encodeURIComponent(book.file_link)}`)}
-                                  className="text-indigo-600 hover:text-indigo-900"
+                                  className="text-indigo-600 hover:text-indigo-900 hover:cursor-pointer"
                                 >
                                   Edit
                                 </button>
                                 <button
                                   title='Delete From Library'
                                   onClick={() => handleDelete(book.id)}
-                                  className="text-red-600 hover:text-red-900"
+                                  className="text-red-600 hover:text-red-900 hover:cursor-pointer"
                                 >
                                   Delete
                                 </button>
@@ -189,7 +188,6 @@ export default function BookManagementPage() {
                     </div>
                   )}
                 </div>
-              </div>
             </div>
           </div>
         </div>

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSearchParams, useRouter } from 'next/navigation';
 
-export default function BookRequestPage() {
+function BookRequestContent() {
   const { isAuthenticated, isLoading, user } = useAuth();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -235,5 +235,13 @@ export default function BookRequestPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BookRequestPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <BookRequestContent />
+    </Suspense>
   );
 }

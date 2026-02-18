@@ -1,36 +1,100 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Library Management System
 
-## Getting Started
+A Next.js-based library management system built for deployment on Netlify.
 
-First, run the development server:
+## Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- User authentication with NextAuth.js
+- Book management and catalog
+- File upload and Google Drive integration
+- Book request system
+- Admin dashboard
+- Responsive design with Tailwind CSS
+
+## Tech Stack
+
+- **Framework**: Next.js 16.1.6
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS
+- **Authentication**: NextAuth.js
+- **Database**: Prisma with JSON file storage
+- **Deployment**: Netlify
+
+## Environment Variables
+
+Create a `.env.local` file with the following variables:
+
+```env
+NEXTAUTH_URL=https://your-domain.netlify.app
+NEXTAUTH_SECRET=your-secret-key
+GOOGLE_OAUTH_CLIENT_ID=your-google-oauth-client-id
+GOOGLE_OAUTH_CLIENT_SECRET=your-google-oauth-client-secret
+GOOGLE_REDIRECT_URI=https://your-domain.netlify.app/api/auth/callback/google
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deployment
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### Netlify Deployment
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Connect your repository to Netlify
+2. Set environment variables in Netlify dashboard
+3. Deploy - Netlify will automatically build and deploy
 
-## Learn More
+### Build Configuration
 
-To learn more about Next.js, take a look at the following resources:
+The project is configured for Netlify deployment with:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Build Command**: `npm run build`
+- **Publish Directory**: `.next`
+- **Node Version**: 20
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Local Development
 
-## Deploy on Vercel
+```bash
+# Install dependencies
+npm install
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# Run development server
+npm run dev
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# Build for production
+npm run build
+
+# Start production server
+npm start
+```
+
+## Project Structure
+
+```
+src/
+├── app/
+│   ├── api/           # API routes
+│   ├── auth/          # Authentication pages
+│   ├── dashboard/    # Main dashboard
+│   └── ...
+├── components/        # Reusable components
+├── hooks/            # Custom React hooks
+├── types/            # TypeScript type definitions
+└── ...
+```
+
+## API Routes
+
+- `/api/auth/[...nextauth]` - NextAuth.js authentication
+- `/api/books-admin` - Book management
+- `/api/upload-to-drive` - Google Drive upload
+- `/api/openlibrary` - Open Library integration
+
+## Security Features
+
+- Protected routes with authentication
+- File upload validation
+- XSS protection headers
+- CSRF protection via NextAuth.js
+
+## Notes
+
+- The project uses file-based storage for simplicity
+- Google Drive integration requires OAuth setup
+- All API routes are server-side rendered for security
