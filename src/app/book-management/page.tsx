@@ -53,7 +53,7 @@ export default function BookManagementPage() {
 
     setError('');
     try {
-      const response = await fetch(`/api/books-admin/${bookId}`, {
+      const response = await fetch(`/api/books-admin?id=${bookId}`, {
         method: 'DELETE',
       });
       const result = await response.json();

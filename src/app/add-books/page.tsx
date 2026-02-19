@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Role } from '@/types/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FiPlus, FiUpload, FiX, FiCheck, FiAlertCircle, FiLink } from 'react-icons/fi';
+import { FiPlus, FiUpload, FiCheck, FiAlertCircle, FiLink } from 'react-icons/fi';
 
 interface BookData {
   title: string;
@@ -195,10 +195,11 @@ function AddBooksContent() {
       
       // For editing, get the previous file link for cleanup
       if (editingId) {
-        const response = await fetch(`/api/books-admin/${editingId}`);
-        if (response.ok) {
-          const bookData = await response.json();
-          previousFileLink = bookData.book?.file_link || '';
+        const booksResponse = await fetch('/api/books-admin');
+        if (booksResponse.ok) {
+          const booksData = await booksResponse.json();
+          const book = booksData.books?.find((b: { id: number; file_link: string }) => b.id === editingId);
+          previousFileLink = book?.file_link || '';
         }
       }
       
@@ -222,12 +223,15 @@ function AddBooksContent() {
       let response;
       if (editingId) {
         // Update existing book
-        response = await fetch(`/api/books-admin/${editingId}`, {
+        response = await fetch('/api/books-admin', {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify(bookData),
+          body: JSON.stringify({
+            id: editingId,
+            ...bookData
+          }),
         });
       } else {
         // Create new book
@@ -665,7 +669,7 @@ function AddBooksContent() {
                             name={`inputMode-${index}`}
                             value="file"
                             checked={book.inputMode === 'file'}
-                            onChange={(e) => {
+                            onChange={() => {
                               const newBooks = [...books];
                               newBooks[index] = { ...newBooks[index], inputMode: 'file', file_link: '' };
                               setBooks(newBooks);
@@ -683,7 +687,7 @@ function AddBooksContent() {
                             name={`inputMode-${index}`}
                             value="link"
                             checked={book.inputMode === 'link'}
-                            onChange={(e) => {
+                            onChange={() => {
                               const newBooks = [...books];
                               newBooks[index] = { ...newBooks[index], inputMode: 'link', file: null };
                               setBooks(newBooks);

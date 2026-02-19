@@ -156,12 +156,37 @@ async function sendTelegramMessage(chatId: string, text: string): Promise<boolea
   }
 }
 
-async function sendTelegramDocument(
+async function sendTelegramMessageWithTracking(chatId: string, text: string): Promise<{ ok: boolean; messageId?: string }> {
+  try {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text,
+        parse_mode: 'HTML',
+      }),
+    });
+
+    const payload = await response.json();
+    if (response.ok && payload?.ok) {
+      return { ok: true, messageId: payload.result?.message_id };
+    }
+    return { ok: false };
+  } catch {
+    return { ok: false };
+  }
+}
+
+async function sendTelegramDocumentWithTracking(
   chatId: string,
   fileBuffer: Buffer,
   fileName: string,
   caption: string
-  ): Promise<boolean> {
+): Promise<{ ok: boolean; messageId?: string }> {
   try {
     const formData = new FormData();
     formData.append('chat_id', chatId);
@@ -176,9 +201,43 @@ async function sendTelegramDocument(
     });
 
     const payload = await response.json();
+    if (response.ok && payload?.ok) {
+      return { ok: true, messageId: payload.result?.message_id };
+    }
+    return { ok: false };
+  } catch {
+    return { ok: false };
+  }
+}
+
+async function deleteTelegramMessage(chatId: string, messageId: string): Promise<boolean> {
+  try {
+    const url = `https://api.telegram.org/bot${BOT_TOKEN}/deleteMessage`;
+    const response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        chat_id: chatId,
+        message_id: messageId,
+      }),
+    });
+
+    const payload = await response.json();
     return response.ok && Boolean(payload?.ok);
   } catch {
     return false;
+  }
+}
+
+async function clearIntermediateMessages(chatId: string, messageIds: string[]): Promise<void> {
+  for (const messageId of messageIds) {
+    if (messageId) {
+      await deleteTelegramMessage(chatId, messageId);
+      // Small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
   }
 }
 
@@ -433,10 +492,16 @@ export async function POST(request: NextRequest) {
     const match = findBook(books, title, author);
 
     if (match) {
-      await sendTelegramMessage(
+      const intermediateMessageIds: string[] = [];
+
+      // Send initial "AVAILABLE" message with tracking
+      const availableResult = await sendTelegramMessageWithTracking(
         ADMIN_CHAT_ID,
         formatAvailableAdminMessage(title, author, email, description)
       );
+      if (availableResult.messageId) {
+        intermediateMessageIds.push(availableResult.messageId);
+      }
 
       const fetched = await fetchBookFile(match);
       if (!fetched) {
@@ -456,21 +521,30 @@ export async function POST(request: NextRequest) {
           `Delivery failed.\nTitle: ${title || '-'}\nAuthor: ${author || '-'}\nEmail: ${email || '-'}\nReason: Could not download file from link.`
         );
 
+        // Clear intermediate messages on failure
+        await clearIntermediateMessages(ADMIN_CHAT_ID, intermediateMessageIds);
+
         return NextResponse.json(
           {
             error:
-              'Book found, but download failed. Ensure the Google Drive file is shared publicly and uses a valid link.',
+              'Book found, but download failed. Ensure that the Google Drive file is shared publicly and uses a valid link.',
           },
           { status: 502 }
         );
       }
 
-      const telegramDelivered = await sendTelegramDocument(
+      // Send delivery preview message with tracking
+      const telegramResult = await sendTelegramDocumentWithTracking(
         ADMIN_CHAT_ID,
         fetched.fileBuffer,
         fetched.fileName,
         `Book delivery preview:\n${match.title} by ${match.author}`
       );
+      if (telegramResult.messageId) {
+        intermediateMessageIds.push(telegramResult.messageId);
+      }
+
+      const telegramDelivered = telegramResult.ok;
 
       const emailResult = await sendBookEmail(
         email,
@@ -511,6 +585,9 @@ export async function POST(request: NextRequest) {
           ].join('\n')
         );
 
+        // Clear intermediate messages on failure
+        await clearIntermediateMessages(ADMIN_CHAT_ID, intermediateMessageIds);
+
         return NextResponse.json(
           {
             error:
@@ -520,7 +597,8 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      await sendTelegramMessage(
+      // Send final completion message
+      const completionResult = await sendTelegramMessageWithTracking(
         ADMIN_CHAT_ID,
         [
           '<b>🎉 DELIVERY COMPLETED 🎉</b>',
@@ -537,6 +615,15 @@ export async function POST(request: NextRequest) {
           '🆔 <b>Email Message ID:</b> <code>' + (emailResult.messageId || '-') + '</code>',
         ].join('\n')
       );
+
+      if (!completionResult.ok) {
+        console.error('Failed to send completion message');
+      }
+
+      // Wait a moment for the completion message to be fully delivered, then clear intermediate messages
+      setTimeout(async () => {
+        await clearIntermediateMessages(ADMIN_CHAT_ID, intermediateMessageIds);
+      }, 2000);
 
       return NextResponse.json({ success: true, message: 'Book delivered to Telegram and sent to email.' });
     }

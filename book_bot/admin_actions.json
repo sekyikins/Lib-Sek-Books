@@ -1,0 +1,413 @@
+[
+  {
+    "timestamp": "2026-02-19T02:15:21.640539+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Transcending Imagination - Artificial Intelligence and the Future",
+      "author": "Alexander Manu",
+      "file_id": "BQACAgQAAxkBAANAaZZS6CaN1MdG5useZfuhvO1CYocAAqMcAALJnbFQmQxYeIpbZW86BA",
+      "response": {
+        "book": {
+          "id": 8,
+          "title": "Transcending Imagination - Artificial Intelligence and the Future",
+          "author": "Alexander Manu",
+          "file_link": "https://drive.google.com/file/d/BQACAgQAAxkBAANAaZZS6CaN1MdG5useZfuhvO1CYocAAqMcAALJnbFQmQxYeIpbZW86BA/view",
+          "added_at": "2026-02-19T02:15:21.633Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T02:26:48.025943+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Transcending Imagination - Artificial Intelligence and the Future",
+      "author": "Alexander Manu",
+      "file_name": "Transcending_Imagination_Artificial_Intelligence_and_the_Future.pdf",
+      "file_id": "BQACAgQAAxkBAANAaZZS6CaN1MdG5useZfuhvO1CYocAAqMcAALJnbFQmQxYeIpbZW86BA",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1u7TAUdLjRxcRE11qmrTcSPaNVJkXEP_N/view?usp=sharing",
+        "fileName": "Transcending_Imagination_Artificial_Intelligence_and_the_Future.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 9,
+          "title": "Transcending Imagination - Artificial Intelligence and the Future",
+          "author": "Alexander Manu",
+          "file_link": "https://drive.google.com/file/d/1u7TAUdLjRxcRE11qmrTcSPaNVJkXEP_N/view?usp=sharing",
+          "added_at": "2026-02-19T02:26:48.005Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T02:37:13.884789+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Transcending Imagination - Artificial Intelligence and the Future",
+      "author": "Alexander Manu",
+      "file_name": "Transcending_Imagination_Artificial_Intelligence_and_the_Future.pdf",
+      "file_id": "BQACAgQAAxkBAANAaZZS6CaN1MdG5useZfuhvO1CYocAAqMcAALJnbFQmQxYeIpbZW86BA",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/12vWVuQ9HgUs11z59C5hHDO8QODRfZpiC/view?usp=sharing",
+        "fileName": "Transcending_Imagination_Artificial_Intelligence_and_the_Future.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 8,
+          "title": "Transcending Imagination - Artificial Intelligence and the Future",
+          "author": "Alexander Manu",
+          "file_link": "https://drive.google.com/file/d/12vWVuQ9HgUs11z59C5hHDO8QODRfZpiC/view?usp=sharing",
+          "added_at": "2026-02-19T02:37:13.857Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T02:43:27.441481+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Transcending Imagination - Artificial Intelligence and the Future",
+      "author": "Alexander Manu",
+      "file_name": "Transcending_Imagination_Artificial_Intelligence_and_the_Future.pdf",
+      "file_id": "BQACAgQAAxkBAANAaZZS6CaN1MdG5useZfuhvO1CYocAAqMcAALJnbFQmQxYeIpbZW86BA",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1STGc6IxdNuV8qA-vuorwZH6Lie2_Gyh0/view?usp=sharing",
+        "fileName": "Transcending_Imagination_Artificial_Intelligence_and_the_Future.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 8,
+          "title": "Transcending Imagination - Artificial Intelligence and the Future",
+          "author": "Alexander Manu",
+          "file_link": "https://drive.google.com/file/d/1STGc6IxdNuV8qA-vuorwZH6Lie2_Gyh0/view?usp=sharing",
+          "added_at": "2026-02-19T02:43:27.417Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T02:46:32.058284+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Think Python - 3rd Edition",
+      "author": "Benjamin Sekyi",
+      "file_name": "Think Python 3rd Edition (2024).pdf",
+      "file_id": "BQACAgQAAxkBAAM0aZT_BgpkJoLBUkik7JIlBj3yTDUAAtEeAALJnalQZ2UlGTQj6nE6BA",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1f5Om9D93tfoUGSMQL_M1QIk4e2n7DlFF/view?usp=sharing",
+        "fileName": "Think_Python_3rd_Edition__2024_.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 9,
+          "title": "Think Python - 3rd Edition",
+          "author": "Benjamin Sekyi",
+          "file_link": "https://drive.google.com/file/d/1f5Om9D93tfoUGSMQL_M1QIk4e2n7DlFF/view?usp=sharing",
+          "added_at": "2026-02-19T02:46:32.028Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T03:08:56.023738+00:00",
+    "action": "delete_book",
+    "details": {
+      "book_id": 9,
+      "response": {
+        "message": "Book deleted successfully",
+        "deletedBook": {
+          "id": 9,
+          "title": "Think Python - 3rd Edition",
+          "author": "Benjamin Sekyi",
+          "file_link": "https://drive.google.com/file/d/1f5Om9D93tfoUGSMQL_M1QIk4e2n7DlFF/view?usp=sharing",
+          "added_at": "2026-02-19T02:46:32.028Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T03:14:47.893209+00:00",
+    "action": "update_book",
+    "details": {
+      "book_id": 1,
+      "field": "title",
+      "new_value": "Atomic Habit",
+      "response": {
+        "book": {
+          "id": 1,
+          "title": "Atomic Habit",
+          "author": "James Clear",
+          "file_link": "https://drive.google.com/file/d/1J94nRSsjKtsn54Ak5wpw8OuMF-2M0W0v/view?usp=drive_link"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T03:15:28.737544+00:00",
+    "action": "update_book",
+    "details": {
+      "book_id": 1,
+      "field": "title",
+      "new_value": "Atomic Habits",
+      "response": {
+        "book": {
+          "id": 1,
+          "title": "Atomic Habits",
+          "author": "James Clear",
+          "file_link": "https://drive.google.com/file/d/1J94nRSsjKtsn54Ak5wpw8OuMF-2M0W0v/view?usp=drive_link"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T03:30:00.120730+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Think Python - 3rd Edition",
+      "author": "Andy Forson",
+      "file_name": "Think Python 3rd Edition (2024).pdf",
+      "file_id": "BQACAgQAAxkBAAM0aZT_BgpkJoLBUkik7JIlBj3yTDUAAtEeAALJnalQZ2UlGTQj6nE6BA",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1azwk_VJEZfVZS1ZklbsY76e3Odmc_VQL/view?usp=sharing",
+        "fileName": "Think_Python_3rd_Edition__2024_.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 9,
+          "title": "Think Python - 3rd Edition",
+          "author": "Andy Forson",
+          "file_link": "https://drive.google.com/file/d/1azwk_VJEZfVZS1ZklbsY76e3Odmc_VQL/view?usp=sharing",
+          "added_at": "2026-02-19T03:30:00.105Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T04:06:52.298536+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Introduction to HTML and CSS",
+      "author": "RoseMary",
+      "file_name": "Topic 1 - Introduction to HTML and CSS.pdf",
+      "file_id": "BQACAgQAAxkBAAIBGWmWjB1LN6POEtlt5NSHW1v_QHluAALMHAACyZ2xUI10oHcbfGcJOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1XUked2KBzhqwndEH3g--T-ftKaEkQLHS/view?usp=sharing",
+        "fileName": "Topic_1_-_Introduction_to_HTML_and_CSS.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 10,
+          "title": "Introduction to HTML and CSS",
+          "author": "RoseMary",
+          "file_link": "https://drive.google.com/file/d/1XUked2KBzhqwndEH3g--T-ftKaEkQLHS/view?usp=sharing",
+          "added_at": "2026-02-19T04:06:52.279Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T04:32:16.559278+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "introduction to html and css",
+      "author": "me",
+      "file_name": "Topic 1 - Introduction to HTML and CSS.pdf",
+      "file_id": "BQACAgQAAxkBAAIBIWmWkhly04eVzHk7mARcDCfLqaHGAALOHAACyZ2xUD7Nyc5Z_xVOOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/16d4T4amHLPEilCzrZo7GaRNiiA4fAvyn/view?usp=sharing",
+        "fileName": "Topic_1_-_Introduction_to_HTML_and_CSS.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 11,
+          "title": "introduction to html and css",
+          "author": "me",
+          "file_link": "https://drive.google.com/file/d/16d4T4amHLPEilCzrZo7GaRNiiA4fAvyn/view?usp=sharing",
+          "added_at": "2026-02-19T04:32:16.546Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T04:38:56.958952+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Fundamentals of Data Science",
+      "author": "Sanjeev J. Wagh, Manisha S. Bhende, and Anuradha D. Thakare",
+      "file_name": "Fundamentals of Data Science.pdf",
+      "file_id": "BQACAgQAAxkBAAIBLWmWk3oSjlEv3ZdLr4Ta5lp024C7AALQHAACyZ2xUMAAAS8e6QABHso6BA",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1GzTwwRd1GoKCDpGtxg5DNG7EAEpPZUi2/view?usp=sharing",
+        "fileName": "Fundamentals_of_Data_Science.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 12,
+          "title": "Fundamentals of Data Science",
+          "author": "Sanjeev J. Wagh, Manisha S. Bhende, and Anuradha D. Thakare",
+          "file_link": "https://drive.google.com/file/d/1GzTwwRd1GoKCDpGtxg5DNG7EAEpPZUi2/view?usp=sharing",
+          "added_at": "2026-02-19T04:38:56.948Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T05:00:03.534868+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Large Language Models Projects Apply and Implement Strategies for Large Language Model",
+      "author": "Pere Martra",
+      "file_name": "Large_Language_Models_Projects_Apply_and_Implement_Strategies_for.pdf",
+      "file_id": "BQACAgQAAxkBAAIBOmmWmFhk6etYy8iCtKLRrhG72-LpAALTHAACyZ2xUExZQeDrUTGVOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1iMDd7B_lg-c0PYY7fr7jy8co3L3Dsoow/view?usp=sharing",
+        "fileName": "Large_Language_Models_Projects_Apply_and_Implement_Strategies_for.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 13,
+          "title": "Large Language Models Projects Apply and Implement Strategies for Large Language Model",
+          "author": "Pere Martra",
+          "file_link": "https://drive.google.com/file/d/1iMDd7B_lg-c0PYY7fr7jy8co3L3Dsoow/view?usp=sharing",
+          "added_at": "2026-02-19T05:00:03.516Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T05:14:18.165412+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Quantum Machine \nLearning\nA Modern Approach",
+      "author": "S. Karthikeyan  \nM. Akila  \n D. Sumathi  \n T. Poongodi",
+      "file_name": "Quantum Machine Learning A Modern Approach.pdf",
+      "file_id": "BQACAgQAAxkBAAIBQ2mWm7tzh1VmyHYVB4xJF_fX3gkEAALVHAACyZ2xUFeslu_MMGfIOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1xu-XrgPL1Zdg9MfGQ5O7JWMPzQD296m4/view?usp=sharing",
+        "fileName": "Quantum_Machine_Learning_A_Modern_Approach.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 14,
+          "title": "Quantum Machine \nLearning\nA Modern Approach",
+          "author": "S. Karthikeyan  \nM. Akila  \n D. Sumathi  \n T. Poongodi",
+          "file_link": "https://drive.google.com/file/d/1xu-XrgPL1Zdg9MfGQ5O7JWMPzQD296m4/view?usp=sharing",
+          "added_at": "2026-02-19T05:14:18.151Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T05:23:09.285341+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Mindset _ The New Psychology of Success",
+      "author": "Carol S. Dweck, Ph.D",
+      "file_name": "Mindset_ The New Psychology of Success 1.pdf",
+      "file_id": "BQACAgQAAxkBAAIBTWmWnbCqNvXXgoPl5oTz8XBVYV3IAALWHAACyZ2xUBQ1ZfbsAnqOOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1wVv8bLrjCuJt04XN2dMnreQcJ6JGrs3v/view?usp=sharing",
+        "fileName": "Mindset__The_New_Psychology_of_Success_1.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 15,
+          "title": "Mindset _ The New Psychology of Success",
+          "author": "Carol S. Dweck, Ph.D",
+          "file_link": "https://drive.google.com/file/d/1wVv8bLrjCuJt04XN2dMnreQcJ6JGrs3v/view?usp=sharing",
+          "added_at": "2026-02-19T05:23:09.271Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T13:59:41.382110+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Life Time Data: Statistical Models And Methods - Quality Reliability",
+      "author": "Jayant V. Deshpande & Sudha G. Purohit",
+      "file_name": "Life_time_Data_Statistical_Models_And_Methods_Quality,_Reliability.pdf",
+      "file_id": "BQACAgQAAxkBAAIBXWmXFhgofHvt-BeIs_gNLFnq0fcXAAKhHAACpUy4UDF192kVgBNPOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1GYz4826n_qqQhsWbmnN90cSlMBm9thT4/view?usp=sharing",
+        "fileName": "Life_time_Data_Statistical_Models_And_Methods_Quality__Reliability.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 16,
+          "title": "Life Time Data: Statistical Models And Methods - Quality Reliability",
+          "author": "Jayant V. Deshpande & Sudha G. Purohit",
+          "file_link": "https://drive.google.com/file/d/1GYz4826n_qqQhsWbmnN90cSlMBm9thT4/view?usp=sharing",
+          "added_at": "2026-02-19T13:59:41.365Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T14:42:35.145001+00:00",
+    "action": "delete_book",
+    "details": {
+      "book_id": 3,
+      "response": {
+        "message": "Book deleted successfully",
+        "deletedBook": {
+          "id": 3,
+          "title": "The Power of Habit",
+          "author": "Charles Duhigg",
+          "file_link": "https://drive.google.com/file/d/1sz-bssjAzp-1xD5gWZOzQjc_8osHZAYK/view?usp=sharing",
+          "added_at": "2026-02-17T03:51:07.006Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-19T14:57:54.375993+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "LLM Foundation - Foundational Large Language Models & Text Generation (Google)",
+      "author": "Mohammadamin Barektain, Anant Nawalgaria, Daniel J. Mankowitz, Majd Al Merey, Yaniv Leviathan, Massimo Mascaro, Matan Kalman, Elena Buchatskaya & Aliaksei Severyn, and Antonio Gulli",
+      "file_name": "LLM_foundation.pdf",
+      "file_id": "BQACAgIAAxkBAAIBeGmXJFa-OQ-4GY0w7sO7G8nUDhTPAALYdQACQB9ISPkjzumbgPAnOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1pM4EeqIB1_CCpm81YJlDHVLAPqPb32wM/view?usp=sharing",
+        "fileName": "LLM_foundation.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 16,
+          "title": "LLM Foundation - Foundational Large Language Models & Text Generation (Google)",
+          "author": "Mohammadamin Barektain, Anant Nawalgaria, Daniel J. Mankowitz, Majd Al Merey, Yaniv Leviathan, Massimo Mascaro, Matan Kalman, Elena Buchatskaya & Aliaksei Severyn, and Antonio Gulli",
+          "file_link": "https://drive.google.com/file/d/1pM4EeqIB1_CCpm81YJlDHVLAPqPb32wM/view?usp=sharing",
+          "added_at": "2026-02-19T14:57:54.359Z"
+        }
+      }
+    }
+  }
+]
