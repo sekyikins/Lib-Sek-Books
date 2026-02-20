@@ -1,7 +1,4 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
-import { existsSync, unlinkSync } from 'fs';
 import { Readable } from 'stream';
 
 // Google Drive folder ID (you can make this configurable via environment variables)
@@ -18,7 +15,13 @@ interface GoogleDriveResponse {
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
+    let formData;
+    try {
+      formData = await request.formData();
+    } catch {
+      return NextResponse.json({ error: 'Invalid form data' }, { status: 400 });
+    }
+    
     const file = formData.get('file') as File;
     const name = formData.get('name') as string;
 
@@ -48,34 +51,17 @@ export async function POST(request: NextRequest) {
       }, { status: 400 });
     }
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'uploads');
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true });
-    }
-
-    // Save file locally first
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
     
-    // Create unique filename to avoid conflicts
+    // Create unique filename for Google Drive
     const timestamp = Date.now();
     const sanitizedName = name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const fileName = `${timestamp}_${sanitizedName}`;
-    const filePath = join(uploadsDir, fileName);
-    
-    await writeFile(filePath, buffer);
 
-    // Try to upload to Google Drive if credentials are available
+    // Upload directly to Google Drive
     try {
-      const googleDriveUrl = await uploadToGoogleDrive(buffer, sanitizedName, file.type);
-      
-      // Clean up local file after successful upload
-      try {
-        await unlinkSync(filePath);
-      } catch (cleanupError) {
-        console.warn('Failed to cleanup local file:', cleanupError);
-      }
+      const googleDriveUrl = await uploadToGoogleDrive(buffer, fileName, file.type);
       
       return NextResponse.json({
         success: true,
@@ -85,19 +71,12 @@ export async function POST(request: NextRequest) {
       });
       
     } catch (driveError) {
-      console.warn('Google Drive upload failed, using local fallback:', driveError);
-      
-      // Fallback: return a local file URL or mock Google Drive URL
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
-      const localUrl = `${baseUrl}/uploads/${fileName}`;
+      console.error('Google Drive upload failed:', driveError);
       
       return NextResponse.json({
-        success: true,
-        fileUrl: localUrl, // or generate mock Google Drive URL
-        fileName: sanitizedName,
-        localPath: filePath,
-        message: 'File saved locally (Google Drive upload not configured)'
-      });
+        error: 'Failed to upload file. Google Drive configuration required.',
+        details: driveError instanceof Error ? driveError.message : 'Unknown error'
+      }, { status: 500 });
     }
 
   } catch (error) {

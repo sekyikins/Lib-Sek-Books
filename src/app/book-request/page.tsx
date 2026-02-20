@@ -92,9 +92,9 @@ function BookRequestContent() {
                 <div className="text-center py-8">
                   <div className="text-green-600 text-lg font-medium mb-2">✅ Request Submitted Successfully!</div>
                   <p className="text-gray-700" >
-                    Your request has been sent to the bot. If available, the book will be sent to your email.
+                    Your request has been sent. You will receive an email shortly.
                   </p>
-                  <p className="text-gray-600" >Check your spam if you don&apos;t receive any email.</p>
+                  <p className="text-gray-600" >Make sure to check your spam, if you can not find the mail in your inbox.</p>
                   <div className='flex justify-center gap-2 w-full'>
                     <button
                       type="button"

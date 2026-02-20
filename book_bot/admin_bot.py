@@ -59,6 +59,20 @@ API_BASE = f"https://api.telegram.org/bot{BOT_TOKEN}"
 # User states for multi-step commands
 user_states: Dict[str, Dict[str, Any]] = {}
 
+# Operation-based system for unified message tracking and cancellation
+class Operation:
+    def __init__(self, chat_id: str, operation_type: str):
+        self.id = f"{chat_id}_{operation_type}_{int(time.time() * 1000)}"
+        self.chat_id = chat_id
+        self.operation_type = operation_type
+        self.messages: List[str] = []
+        self.active = True
+        self.created_at = now_iso()
+
+# Global operation registry
+operations: Dict[str, Operation] = {}  # operation_id -> Operation
+chat_operations: Dict[str, str] = {}  # chat_id -> operation_id
+
 # Request logging
 REQUESTS_FILE = BASE_DIR / "requests.json"
 
@@ -68,11 +82,188 @@ def ensure_requests_file() -> None:
         REQUESTS_FILE.write_text("[]\n", encoding="utf-8")
 
 
+def load_json_array(file_path: Path) -> List[Dict[str, Any]]:
+    """Load JSON array from file"""
+    try:
+        if file_path.exists():
+            content = file_path.read_text(encoding="utf-8")
+            return json.loads(content) if content.strip() else []
+        return []
+    except Exception as e:
+        print(f"Error loading {file_path}: {e}", flush=True)
+        return []
+
+
+def save_json_array(file_path: Path, data: List[Dict[str, Any]]) -> None:
+    """Save JSON array to file"""
+    try:
+        file_path.write_text(json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8")
+    except Exception as e:
+        print(f"Error saving {file_path}: {e}", flush=True)
+
+
 def log_request(entry: Dict[str, Any]) -> None:
     ensure_requests_file()
     existing = load_json_array(REQUESTS_FILE)
     existing.append(entry)
     save_json_array(REQUESTS_FILE, existing)
+
+
+def update_request(chat_id: str, title: str, author: str, status: str, **kwargs) -> None:
+    """Update an existing request or create a new one if not found"""
+    ensure_requests_file()
+    requests = load_json_array(REQUESTS_FILE)
+    
+    # Try to find existing request by chat_id, title, and author
+    existing_request = None
+    existing_index = -1
+    
+    for i, req in enumerate(requests):
+        if (req.get("telegramChatId") == str(chat_id) and 
+            req.get("title") == title and 
+            req.get("author") == author):
+            existing_request = req
+            existing_index = i
+            break
+    
+    # Create updated request entry
+    updated_entry = {
+        "timestamp": now_iso(),
+        "title": title,
+        "author": author,
+        "telegramChatId": str(chat_id),
+        "status": status,
+        **kwargs
+    }
+    
+    if existing_request:
+        # Update existing request
+        requests[existing_index] = updated_entry
+    else:
+        # Create new request if not found
+        requests.append(updated_entry)
+    
+    save_json_array(REQUESTS_FILE, requests)
+
+
+# Operation management functions
+def start_operation(chat_id: str, operation_type: str) -> str:
+    """Start a new operation and return its ID"""
+    # Cancel any existing operation for this chat
+    cancel_operation(chat_id)
+    
+    operation = Operation(chat_id, operation_type)
+    operations[operation.id] = operation
+    chat_operations[chat_id] = operation.id
+    
+    print(f"Started operation {operation.id} for chat {chat_id}", flush=True)
+    return operation.id
+
+
+def register_message(operation_id: str, message_id: str) -> None:
+    """Register a message to an operation"""
+    if operation_id in operations:
+        operations[operation_id].messages.append(message_id)
+
+
+def get_current_operation(chat_id: str) -> Optional[Operation]:
+    """Get the current active operation for a chat"""
+    operation_id = chat_operations.get(chat_id)
+    if operation_id and operation_id in operations:
+        return operations[operation_id]
+    return None
+
+
+def cancel_operation(chat_id: str, cancel_text: str = "Operation cancelled") -> bool:
+    """Cancel the current operation for a chat and clean up all messages"""
+    operation_id = chat_operations.get(chat_id)
+    if not operation_id or operation_id not in operations:
+        return False
+    
+    operation = operations[operation_id]
+    operation.active = False
+    
+    # Delete all messages registered to this operation
+    for message_id in operation.messages:
+        try:
+            api_call("deleteMessage", {
+                "chat_id": chat_id,
+                "message_id": message_id
+            })
+            time.sleep(0.05)  # Small delay to avoid rate limiting
+        except Exception:
+            pass
+    
+    # Clean up operation data
+    operations.pop(operation_id, None)
+    chat_operations.pop(chat_id, None)
+    
+    # Clear user state
+    user_states.pop(chat_id, None)
+    
+    # Send cancellation message (don't register to operation since we're ending)
+    send_message(chat_id, f"❌ {cancel_text}")
+    
+    print(f"Cancelled operation {operation_id} for chat {chat_id}", flush=True)
+    return True
+
+
+def register_user_message(chat_id: str, message_id: str) -> None:
+    """Register a user message to the current operation"""
+    operation = get_current_operation(chat_id)
+    if operation:
+        register_message(operation.id, message_id)
+
+
+def send_message_with_operation(chat_id: str, text: str, reply_markup=None) -> str:
+    """Send message and auto-register to current operation"""
+    result = send_message(chat_id, text, reply_markup)
+    
+    # Auto-register to current operation if exists
+    operation = get_current_operation(chat_id)
+    if operation and isinstance(result, dict):
+        message_id = result.get("result", {}).get("message_id")
+        if message_id:
+            register_message(operation.id, message_id)
+    
+    return result
+
+
+def now_iso() -> str:
+    """Get current time in ISO format"""
+    return datetime.now(timezone.utc).isoformat()
+
+
+def finalize_operation(chat_id: str, final_text: str) -> None:
+    """Finalize current operation and send final message"""
+    if not get_current_operation(chat_id):
+        return  # Operation already cancelled
+    
+    operation = get_current_operation(chat_id)
+    if not operation:
+        send_message(chat_id, final_text)
+        return
+    
+    # Delete all messages registered to this operation (including user messages)
+    for message_id in operation.messages:
+        try:
+            api_call("deleteMessage", {
+                "chat_id": chat_id,
+                "message_id": message_id
+            })
+            time.sleep(0.05)  # Small delay to avoid rate limiting
+        except Exception:
+            pass
+    
+    # Send final message (don't register it to operation since we're ending)
+    send_message(chat_id, final_text)
+    
+    # Clean up operation
+    operations.pop(operation.id, None)
+    chat_operations.pop(chat_id, None)
+    user_states.pop(chat_id, None)
+    
+    print(f"Finalized operation {operation.id} for chat {chat_id}", flush=True)
 
 
 def normalize(text: str) -> str:
@@ -206,7 +397,7 @@ def create_book_selection_buttons(matches: List[Dict[str, str]]) -> List[List[Di
 
 def process_user_request(chat_id: str, title: str, author: str, source: str = "telegram") -> None:
     """Process user book request"""
-    initialize_process(chat_id)
+    start_operation(chat_id, "book_request")
     
     # Find matching books
     matches = find_all_books(title, author)
@@ -214,23 +405,20 @@ def process_user_request(chat_id: str, title: str, author: str, source: str = "t
     if not matches:
         # No books found
         status = "not_found"
-        send_message_with_tracking(chat_id,
+        send_message_with_operation(chat_id,
             f"❌ Sorry, we could not find this book right now.\nTitle: {title or '-'}\nAuthor: {author or '-'}\n\nYour request has been noted and will be processed soon."
         )
-        send_message(
+        send_message_with_operation(
             ADMIN_CHAT_ID,
             format_not_found_admin_message(title, author, chat_id),
         )
 
-        log_request(
-            {
-                "timestamp": now_iso(),
-                "title": title,
-                "author": author,
-                "telegramChatId": str(chat_id),
-                "source": source,
-                "status": status,
-            }
+        update_request(
+            chat_id,
+            title,
+            author,
+            status,
+            source=source
         )
 
 
@@ -242,7 +430,14 @@ def send_loading_message(chat_id: str, message: str) -> str:
             "text": f"⏳ {message}",
             "parse_mode": "Markdown"
         })
-        return result.get("result", {}).get("message_id", "")
+        message_id = result.get("result", {}).get("message_id", "")
+        
+        # Register to current operation immediately
+        operation = get_current_operation(chat_id)
+        if operation and message_id:
+            register_message(operation.id, message_id)
+        
+        return message_id
     except Exception:
         return ""
 
@@ -262,15 +457,17 @@ def update_loading_message(chat_id: str, message_id: str, new_text: str) -> None
 
 def send_progress_animation(chat_id: str, steps: List[str], delay: float = 1.0, cleanup_delay: float = 3.0) -> str:
     """Send animated progress messages and auto-cleanup"""
-    # Don't send if process is no longer active
-    if chat_id not in process_messages:
+    # Don't send if operation is no longer active
+    operation = get_current_operation(chat_id)
+    if not operation:
         return ""
     
     message_id = send_loading_message(chat_id, steps[0])
     
     for i, step in enumerate(steps[1:], 1):
-        # Check if process is still active before each step
-        if chat_id not in process_messages:
+        # Check if operation is still active before each step
+        operation = get_current_operation(chat_id)
+        if not operation:
             return ""
         
         time.sleep(delay)
@@ -292,126 +489,16 @@ def send_progress_animation(chat_id: str, steps: List[str], delay: float = 1.0, 
 
 
 def clear_conversation_history(chat_id: str, keep_message_id: str = None, delay: float = 30.0) -> None:
-    """Clear entire conversation history except specified message"""
+    """Clear entire conversation history except specified message using operation system"""
     def delayed_clear():
         time.sleep(delay)
-        try:
-            # Get chat history using getChatHistory (if available) or recent messages
-            # Since getUpdates doesn't give us full history, we'll use a different approach
-            
-            # We'll track messages that were sent during this session
-            if chat_id in message_history:
-                messages_to_delete = []
-                for msg_id in message_history[chat_id]:
-                    if str(msg_id) != str(keep_message_id):
-                        messages_to_delete.append(msg_id)
-                
-                # Delete all messages except the keep message
-                for msg_id in messages_to_delete:
-                    try:
-                        api_call("deleteMessage", {
-                            "chat_id": chat_id,
-                            "message_id": msg_id
-                        })
-                        time.sleep(0.1)  # Small delay to avoid rate limiting
-                    except Exception:
-                        pass
-                
-                # Clear the history tracking
-                message_history[chat_id] = [keep_message_id] if keep_message_id else []
-                    
-        except Exception:
-            pass
+        # Use operation system to clean up
+        cancel_operation(chat_id, "Conversation cleared")
     
     # Run in background thread
     import threading
     clear_thread = threading.Thread(target=delayed_clear, daemon=True)
     clear_thread.start()
-
-
-# Global dictionaries to track messages and processes
-message_history = {}
-process_messages = {}
-
-
-def initialize_process(chat_id: str) -> None:
-    """Initialize process tracking for a chat"""
-    process_messages[chat_id] = []
-
-
-def finalize_process(chat_id: str, final_text: str) -> None:
-    if chat_id not in process_messages:
-        send_message(chat_id, final_text)
-        return
-
-    # Send final message
-    final_result = send_message(chat_id, final_text)
-    final_msg_id = final_result.get("result", {}).get("message_id")
-
-    # Delete everything except final message
-    for msg_id in process_messages.get(chat_id, []):
-        if msg_id == final_msg_id:
-            continue
-        try:
-            api_call("deleteMessage", {
-                "chat_id": chat_id,
-                "message_id": msg_id
-            })
-            time.sleep(0.05)
-        except Exception:
-            pass
-
-    # Reset state
-    process_messages.pop(chat_id, None)
-
-
-def track_process_message(chat_id: str, result) -> None:
-    if not isinstance(result, dict):
-        return
-
-    msg_id = result.get("result", {}).get("message_id")
-    if not msg_id:
-        return
-
-    process_messages.setdefault(chat_id, []).append(msg_id)
-
-def track_message(chat_id: str, message_id: str) -> None:
-    """Track message ID for potential cleanup"""
-    if chat_id not in message_history:
-        message_history[chat_id] = []
-    message_history[chat_id].append(message_id)
-
-
-def send_message_with_tracking(chat_id: str, text: str, reply_markup=None) -> str:
-    """Send message and track it for cleanup"""
-    result = send_message(chat_id, text, reply_markup)
-
-    # NEW:
-    if chat_id in process_messages:
-        track_process_message(chat_id, result)
-
-    return result
-
-
-def now_iso() -> str:
-    return datetime.now(timezone.utc).isoformat()
-
-
-def load_json_array(path: Path) -> List[Dict[str, Any]]:
-    if not path.exists():
-        return []
-
-    try:
-        data = json.loads(path.read_text(encoding="utf-8"))
-        if isinstance(data, list):
-            return [item for item in data if isinstance(item, dict)]
-        return []
-    except json.JSONDecodeError:
-        return []
-
-
-def save_json_array(path: Path, data: List[Dict[str, Any]]) -> None:
-    path.write_text(json.dumps(data, indent=2), encoding="utf-8")
 
 
 def log_admin_action(action: str, details: Dict[str, Any]) -> None:
@@ -462,13 +549,47 @@ def download_telegram_file(file_id: str) -> bytes:
         raise
 
 
-def backend_api_call(method: str, endpoint: str, data: Dict[str, Any] = None) -> Dict[str, Any]:
-    """Make backend API call"""
+def backend_api_call(method: str, endpoint: str, data: Dict[str, Any] = None, files: Dict[str, Any] = None) -> Dict[str, Any]:
+    """Make backend API call with optional file upload support"""
     import urllib.request as urllib_request
     
     url = f"{BACKEND_URL}/api/{endpoint}"
     
-    if method.upper() == "GET":
+    if files:
+        # Handle file upload with multipart form data
+        boundary = f'----WebKitFormBoundary{int(time.time() * 1000)}'
+        
+        # Build multipart body
+        body = b''
+        for field_name, file_data in files.items():
+            if isinstance(file_data, bytes):
+                # File field
+                filename = file_data.get("filename", "file.pdf")
+                body += f'--{boundary}\r\n'.encode()
+                body += f'Content-Disposition: form-data; name="{field_name}"; filename="{filename}"\r\n'.encode()
+                body += f'Content-Type: application/pdf\r\n\r\n'.encode()
+                body += file_data.get("data", file_data)
+                body += f'\r\n'.encode()
+            else:
+                # Regular form field
+                body += f'--{boundary}\r\n'.encode()
+                body += f'Content-Disposition: form-data; name="{field_name}"\r\n\r\n'.encode()
+                body += str(file_data).encode()
+                body += f'\r\n'.encode()
+        
+        # Close boundary
+        body += f'--{boundary}--\r\n'.encode()
+        
+        req = urllib_request.Request(
+            url,
+            data=body,
+            headers={
+                'Content-Type': f'multipart/form-data; boundary={boundary}',
+                'Content-Length': str(len(body))
+            },
+            method='POST'
+        )
+    elif method.upper() == "GET":
         req = urllib_request.Request(url, method="GET")
     elif method.upper() == "DELETE":
         req = urllib_request.Request(url, method="DELETE")
@@ -481,7 +602,8 @@ def backend_api_call(method: str, endpoint: str, data: Dict[str, Any] = None) ->
             method=method.upper(),
         )
     
-    with urllib_request.urlopen(req, timeout=30) as response:
+    timeout = 60 if files else 30
+    with urllib_request.urlopen(req, timeout=timeout) as response:
         return json.loads(response.read().decode("utf-8"))
 
 
@@ -527,10 +649,10 @@ def get_pending_requests() -> List[Dict[str, Any]]:
 
 def handle_uploadbook(chat_id: str, message: str = None) -> None:
     """Handle /uploadbook command"""
-    initialize_process(chat_id)
+    start_operation(chat_id, "uploadbook")
     user_states[chat_id] = {"action": "uploadbook", "step": "waiting_file"}
     
-    send_message_with_tracking(
+    send_message_with_operation(
         chat_id,
         "📤 *Upload New Book*\n\nPlease send the book file (PDF only).\nThe file will be uploaded to Google Drive and added to the library.",
         reply_markup=create_inline_keyboard([[
@@ -539,64 +661,143 @@ def handle_uploadbook(chat_id: str, message: str = None) -> None:
     )
 
 
-def handle_updatebook(chat_id: str, message: str = None) -> None:
-    """Handle /updatebook command"""
+def show_books_with_pagination(chat_id: str, action: str, page: int = 0, search_query: str = "") -> None:
+    """Show books with pagination and search functionality"""
     books = get_books_list()
     
+    # Filter books if search query is provided
+    if search_query:
+        search_query = search_query.lower()
+        books = [
+            book for book in books
+            if search_query in book.get("title", "").lower() or 
+               search_query in book.get("author", "").lower()
+        ]
+    
     if not books:
-        send_message(chat_id, "❌ No books found in the library.")
+        error_text = f"❌ No books found{' for search: ' + search_query if search_query else ''}."
+        # Try to update existing message, otherwise send new one
+        state = user_states.get(chat_id, {})
+        if state.get("list_message_id"):
+            try:
+                api_call("editMessageText", {
+                    "chat_id": chat_id,
+                    "message_id": state["list_message_id"],
+                    "text": error_text
+                })
+                return
+            except Exception:
+                pass
+        
+        send_message_with_operation(chat_id, error_text)
         return
     
-    # Create inline keyboard with book options
+    # Pagination settings
+    books_per_page = 10
+    total_pages = (len(books) + books_per_page - 1) // books_per_page
+    start_idx = page * books_per_page
+    end_idx = start_idx + books_per_page
+    page_books = books[start_idx:end_idx]
+    
+    # Store state for pagination and search
+    state = user_states.get(chat_id, {})
+    user_states[chat_id] = {
+        "action": action,
+        "page": page,
+        "search_query": search_query,
+        "all_books": books,
+        "total_pages": total_pages,
+        "list_message_id": state.get("list_message_id")  # Preserve existing message ID
+    }
+    
+    # Create inline keyboard
     buttons = []
-    for book in books[:10]:  # Limit to first 10 books
+    
+    # Add search button at top
+    buttons.append([{"text": "🔍 Find", "callback_data": f"{action}_search"}])
+    
+    # Add book options
+    icon = "📝" if action == "updatebook" else "🗑️"
+    for book in page_books:
         title = book.get("title", "Unknown")[:30] + ("..." if len(book.get("title", "")) > 30 else "")
+        author = book.get("author", "Unknown")[:20] + ("..." if len(book.get("author", "")) > 20 else "")
         buttons.append([{
-            "text": f"📚 {title}",
-            "callback_data": f"update_book_{book['id']}"
+            "text": f"{icon} {title} - {author}",
+            "callback_data": f"{action}_book_{book['id']}"
         }])
     
+    # Add navigation buttons
+    nav_buttons = []
+    if page > 0:
+        nav_buttons.append({"text": "⬅️ Previous", "callback_data": f"{action}_page_{page-1}"})
+    if page < total_pages - 1:
+        nav_buttons.append({"text": "Next ➡️", "callback_data": f"{action}_page_{page+1}"})
+    
+    if nav_buttons:
+        buttons.append(nav_buttons)
+    
+    # Add cancel button
     buttons.append([{"text": "❌ Cancel", "callback_data": "cancel"}])
     
-    send_message(
+    # Create message text
+    action_text = "Update" if action == "updatebook" else "Delete"
+    search_info = f" (search: '{search_query}')" if search_query else ""
+    page_info = f"Page {page + 1}/{total_pages}" if total_pages > 1 else ""
+    
+    message_text = f"{icon} *{action_text} Book{search_info}*\n\n"
+    if page_info:
+        message_text += f"{page_info}\n\n"
+    message_text += "Select a book to {action_text.lower()}:"
+    
+    # Try to update existing message, otherwise send new one
+    existing_message_id = state.get("list_message_id")
+    if existing_message_id:
+        try:
+            result = api_call("editMessageText", {
+                "chat_id": chat_id,
+                "message_id": existing_message_id,
+                "text": message_text,
+                "reply_markup": create_inline_keyboard(buttons)
+            })
+            
+            # Update the message ID in state (in case it changed)
+            if result and result.get("result"):
+                user_states[chat_id]["list_message_id"] = result["result"]["message_id"]
+            return
+        except Exception:
+            pass
+    
+    # Send new message if update failed or no existing message
+    result = send_message_with_operation(
         chat_id,
-        "📝 *Update Book*\n\nSelect a book to update:",
+        message_text,
         reply_markup=create_inline_keyboard(buttons)
     )
+    
+    # Store the new message ID
+    if result and result.get("result"):
+        user_states[chat_id]["list_message_id"] = result["result"]["message_id"]
+
+
+def handle_updatebook(chat_id: str, message: str = None) -> None:
+    """Handle /updatebook command"""
+    start_operation(chat_id, "updatebook")
+    show_books_with_pagination(chat_id, "updatebook")
 
 
 def handle_deletebook(chat_id: str, message: str = None) -> None:
     """Handle /deletebook command"""
-    books = get_books_list()
-    
-    if not books:
-        send_message(chat_id, "❌ No books found in the library.")
-        return
-    
-    # Create inline keyboard with book options
-    buttons = []
-    for book in books[:10]:  # Limit to first 10 books
-        title = book.get("title", "Unknown")[:30] + ("..." if len(book.get("title", "")) > 30 else "")
-        buttons.append([{
-            "text": f"🗑️ {title}",
-            "callback_data": f"delete_book_{book['id']}"
-        }])
-    
-    buttons.append([{"text": "❌ Cancel", "callback_data": "cancel"}])
-    
-    send_message(
-        chat_id,
-        "🗑️ *Delete Book*\n\nSelect a book to delete:",
-        reply_markup=create_inline_keyboard(buttons)
-    )
+    start_operation(chat_id, "deletebook")
+    show_books_with_pagination(chat_id, "deletebook")
 
 
 def handle_listbooks(chat_id: str, message: str = None) -> None:
     """Handle /listbooks command with pagination"""
+    start_operation(chat_id, "listbooks")
     books = get_books_list()
     
     if not books:
-        send_message(chat_id, "📚 No books found in the library.")
+        send_message_with_operation(chat_id, "📚 No books found in the library.")
         return
     
     # Store pagination state
@@ -612,7 +813,7 @@ def handle_listbooks(chat_id: str, message: str = None) -> None:
 
 
 def show_books_page(chat_id: str, page: int) -> None:
-    """Display a specific page of books"""
+    """Display a specific page of books with message editing"""
     if chat_id not in user_states or user_states[chat_id].get("action") != "listbooks":
         return
     
@@ -645,20 +846,39 @@ def show_books_page(chat_id: str, page: int) -> None:
     
     buttons.append([{"text": "❌ Close", "callback_data": "close_list"}])
     
-    send_message_with_tracking(chat_id, books_text, reply_markup=create_inline_keyboard(buttons))
+    # Check if we have an existing operation to edit message
+    operation = get_current_operation(chat_id)
+    if operation and operation.messages:
+        # Edit existing message
+        try:
+            msg_id = operation.messages[0]  # Get the first message
+            api_call("editMessageText", {
+                "chat_id": chat_id,
+                "message_id": msg_id,
+                "text": books_text,
+                "parse_mode": "Markdown",
+                "reply_markup": create_inline_keyboard(buttons)
+            })
+        except Exception:
+            # If editing fails, send new message
+            send_message_with_operation(chat_id, books_text, reply_markup=create_inline_keyboard(buttons))
+    else:
+        # Send new message
+        send_message_with_operation(chat_id, books_text, reply_markup=create_inline_keyboard(buttons))
 
 
 def handle_linkrequest(chat_id: str, message: str = None) -> None:
     """Handle /linkrequest command with pagination"""
+    start_operation(chat_id, "linkrequest")
     pending_requests = get_pending_requests()
     books = get_books_list()
     
     if not pending_requests:
-        send_message(chat_id, "✅ No pending requests to link.")
+        send_message_with_operation(chat_id, "✅ No pending requests to link.")
         return
     
     if not books:
-        send_message(chat_id, "❌ No books available in the library.")
+        send_message_with_operation(chat_id, "❌ No books available in the library.")
         return
     
     # Store pagination state
@@ -722,7 +942,31 @@ def show_requests_page(chat_id: str, page: int) -> None:
     
     buttons.append([{"text": "❌ Close", "callback_data": "close_list"}])
     
-    send_message_with_tracking(chat_id, requests_text, reply_markup=create_inline_keyboard(buttons))
+    send_message_with_operation(chat_id, requests_text, reply_markup=create_inline_keyboard(buttons))
+
+
+def handle_request(chat_id: str, text: str) -> None:
+    """Handle /request command - process user book request"""
+    # Extract title and author from command or plain text
+    if text.startswith("/request"):
+        # Command format: /request <title> | <author>
+        parts = text[len("/request"):].strip().split("|", 1)
+        if len(parts) == 1:
+            title = parts[0].strip()
+            author = ""
+        elif len(parts) == 2:
+            title = parts[0].strip()
+            author = parts[1].strip()
+        else:
+            send_message_with_operation(chat_id, "❌ Invalid format. Use: /request <title> | <author>")
+            return
+    else:
+        # Plain text - treat as book request
+        title = text.strip()
+        author = ""
+    
+    # Process the book request using the same logic as bot.py
+    process_user_request(chat_id, title, author, "admin_command")
 
 
 def handle_help(chat_id: str, message: str = None) -> None:
@@ -738,28 +982,25 @@ def handle_help(chat_id: str, message: str = None) -> None:
         "All actions are logged for security."
     )
     
-    send_message(chat_id, help_text)
+    send_message_with_operation(chat_id, help_text)
 
 
 def handle_callback_query(chat_id: str, callback_data: str) -> None:
     """Handle inline button callbacks"""
     try:
         if callback_data == "cancel":
-            if chat_id in user_states:
-                del user_states[chat_id]
-            finalize_process(chat_id, "❌ Operation cancelled. ❌")
+            # Universal cancel - works for all commands
+            cancel_operation(chat_id, "Operation cancelled")
             return
         
         if callback_data == "cancel_search":
-            if chat_id in user_states:
-                del user_states[chat_id]
-            finalize_process(chat_id, "❌ Book search cancelled. ❌")
+            # Legacy search cancel - redirect to universal cancel
+            cancel_operation(chat_id, "Book search cancelled")
             return
         
         if callback_data == "close_list":
-            if chat_id in user_states:
-                del user_states[chat_id]
-            send_message(chat_id, "❌ List closed.")
+            # Use operation system for list cleanup
+            cancel_operation(chat_id, "List closed")
             return
         
         # Handle pagination callbacks
@@ -773,10 +1014,66 @@ def handle_callback_query(chat_id: str, callback_data: str) -> None:
             show_requests_page(chat_id, page)
             return
         
+        # Handle updatebook and deletebook pagination
+        if callback_data.startswith("updatebook_page_"):
+            page = int(callback_data.split("_")[-1])
+            state = user_states.get(chat_id, {})
+            show_books_with_pagination(chat_id, "updatebook", page, state.get("search_query", ""))
+            return
+        
+        if callback_data.startswith("deletebook_page_"):
+            page = int(callback_data.split("_")[-1])
+            state = user_states.get(chat_id, {})
+            show_books_with_pagination(chat_id, "deletebook", page, state.get("search_query", ""))
+            return
+        
+        # Handle search functionality
+        if callback_data.startswith("updatebook_search"):
+            # Prompt for search query, preserve existing message
+            state = user_states.get(chat_id, {})
+            user_states[chat_id] = {
+                "action": "updatebook_search",
+                "step": "waiting_for_query",
+                "list_message_id": state.get("list_message_id"),  # Preserve existing book list message
+                "search_prompt_message_id": None  # Will be set after sending prompt
+            }
+            # Send search prompt and store its message ID
+            result = send_message_with_operation(chat_id, 
+                "🔍 *Find Book*\n\nPlease enter book title or author to search:",
+                reply_markup=create_inline_keyboard([[
+                    {"text": "❌ Cancel", "callback_data": "cancel"}
+                ]])
+            )
+            # Store the search prompt message ID
+            if result and result.get("result"):
+                user_states[chat_id]["search_prompt_message_id"] = result["result"]["message_id"]
+            return
+        
+        if callback_data.startswith("deletebook_search"):
+            # Prompt for search query, preserve existing message
+            state = user_states.get(chat_id, {})
+            user_states[chat_id] = {
+                "action": "deletebook_search", 
+                "step": "waiting_for_query",
+                "list_message_id": state.get("list_message_id"),  # Preserve existing book list message
+                "search_prompt_message_id": None  # Will be set after sending prompt
+            }
+            # Send search prompt and store its message ID
+            result = send_message_with_operation(chat_id,
+                "🔍 *Find Book*\n\nPlease enter book title or author to search:",
+                reply_markup=create_inline_keyboard([[
+                    {"text": "❌ Cancel", "callback_data": "cancel"}
+                ]])
+            )
+            # Store the search prompt message ID
+            if result and result.get("result"):
+                user_states[chat_id]["search_prompt_message_id"] = result["result"]["message_id"]
+            return
+        
         if callback_data.startswith("select_book_"):
             # Handle book selection
             if chat_id not in user_states or user_states[chat_id].get("action") != "book_selection":
-                send_message(chat_id, "❌ Invalid selection. Please start a new search.")
+                send_message_with_operation(chat_id, "❌ Invalid selection. Please start a new search.")
                 return
             
             # Show loading animation
@@ -801,7 +1098,7 @@ def handle_callback_query(chat_id: str, callback_data: str) -> None:
             original_request = user_states[chat_id]["original_request"]
             
             if book_index >= len(matches):
-                send_message(chat_id, "❌ Invalid selection.")
+                send_message_with_operation(chat_id, "❌ Invalid selection.")
                 return
             
             # Send the selected book
@@ -818,30 +1115,32 @@ def handle_callback_query(chat_id: str, callback_data: str) -> None:
             book_author = book['author']
             
             if not sent_document:
-                send_message(chat_id, f"📚 Book found:\n{book_title} by {book_author}\n{direct_link}")
-                send_message(ADMIN_CHAT_ID, f"⚠️ Delivery failed for: {book_title} by {book_author}")
+                send_message_with_operation(chat_id, f"📚 Book found:\n{book_title} by {book_author}\n{direct_link}")
+                send_message_with_operation(ADMIN_CHAT_ID, f"⚠️ Delivery failed for: {book_title} by {book_author}")
             
             # Update request log
-            log_request({
-                "timestamp": now_iso(),
-                "title": original_request["title"],
-                "author": original_request["author"],
-                "telegramChatId": str(chat_id),
-                "source": "telegram",
-                "status": "available" if sent_document else "delivery_failed",
-                "selected_book": book_title,
-            })
+            update_request(
+                chat_id,
+                original_request["title"],
+                original_request["author"],
+                "available" if sent_document else "delivery_failed",
+                source="telegram",
+                selected_book=book_title,
+            )
             
             # Clear state
             del user_states[chat_id]
             
             # Wait for progress animation to complete, then finalize
-            time.sleep(10)  # Wait for animation (4 steps * 1.5s + 2s cleanup)
+            for _ in range(20):  # 10 seconds with 0.5s intervals
+                if not get_current_operation(chat_id):
+                    return  # Operation was cancelled
+                time.sleep(0.5)
             
             if sent_document:
-                finalize_process(chat_id, f"✅ Book delivered successfully!\n\n{book_title} by {book_author}")
+                finalize_operation(chat_id, f"✅ Book delivered successfully!\n\n{book_title} by {book_author}")
             else:
-                finalize_process(chat_id, f"❌ Delivery failed. Please try again.\n\n{book_title} by {book_author}")
+                finalize_operation(chat_id, f"❌ Delivery failed. Please try again.\n\n{book_title} by {book_author}")
             
             return
         
@@ -850,7 +1149,8 @@ def handle_callback_query(chat_id: str, callback_data: str) -> None:
             user_states[chat_id] = {
                 "action": "updatebook", 
                 "step": "select_field", 
-                "book_id": book_id
+                "book_id": book_id,
+                "page": 0
             }
             
             buttons = [
@@ -860,7 +1160,7 @@ def handle_callback_query(chat_id: str, callback_data: str) -> None:
                 [{"text": "❌ Cancel", "callback_data": "cancel"}]
             ]
             
-            send_message_with_tracking(
+            send_message_with_operation(
                 chat_id,
                 "📝 *What do you want to update?*",
                 reply_markup=create_inline_keyboard(buttons)
@@ -885,7 +1185,7 @@ def handle_callback_query(chat_id: str, callback_data: str) -> None:
                 "file": "Please send the new file (PDF only):"
             }
             
-            send_message_with_tracking(chat_id, field_messages.get(field, "Please enter the new value:"),
+            send_message_with_operation(chat_id, field_messages.get(field, "Please enter the new value:"),
                 reply_markup=create_inline_keyboard([[
                     {"text": "❌ Cancel", "callback_data": "cancel"}
                 ]]))
@@ -893,6 +1193,11 @@ def handle_callback_query(chat_id: str, callback_data: str) -> None:
         
         if callback_data.startswith("delete_book_"):
             book_id = int(callback_data.split("_")[-1])
+            user_states[chat_id] = {
+                "action": "deletebook", 
+                "book_id": book_id,
+                "page": 0
+            }
             
             # Show progress animation
             progress_steps = [
@@ -922,19 +1227,25 @@ def handle_callback_query(chat_id: str, callback_data: str) -> None:
                 del user_states[chat_id]
                 
                 # Wait for progress animation to complete, then finalize
-                time.sleep(7)  # Wait for animation (3 steps * 1s + 2s cleanup)
-                finalize_process(chat_id, f"✅ Book deleted successfully!\n\nBook ID: {book_id}")
+                for _ in range(14):  # 7 seconds with 0.5s intervals
+                    if not get_current_operation(chat_id):
+                        return  # Operation was cancelled
+                    time.sleep(0.5)
+                finalize_operation(chat_id, f"✅ Book deleted successfully!\n\nBook ID: {book_id}")
                 
             except Exception as e:
                 print(f"Failed to delete book: {e}", flush=True)
-                time.sleep(7)  # Wait for animation to complete
-                finalize_process(chat_id, f"❌ Failed to delete book: {str(e)}")
+                for _ in range(14):  # 7 seconds with 0.5s intervals
+                    if not get_current_operation(chat_id):
+                        return  # Operation was cancelled
+                    time.sleep(0.5)
+                finalize_operation(chat_id, f"❌ Failed to delete book: {str(e)}")
             
             return
         
     except Exception as e:
         print(f"Callback error: {e}", flush=True)
-        send_message(chat_id, "❌ An error occurred. Please try again.")
+        send_message_with_operation(chat_id, "❌ An error occurred. Please try again.")
 
 
 def handle_message(message: Dict[str, Any]) -> None:
@@ -942,6 +1253,7 @@ def handle_message(message: Dict[str, Any]) -> None:
     chat = message.get("chat", {})
     chat_id = str(chat.get("id", ""))
     text = str(message.get("text", "")).strip()
+    message_id = str(message.get("message_id", ""))
     
     if not chat_id:
         return
@@ -949,10 +1261,16 @@ def handle_message(message: Dict[str, Any]) -> None:
     # Check if user is admin (for admin commands)
     is_admin_user = is_admin(chat_id)
     
+    # Register user message to current operation if it's an admin operation
+    if is_admin_user and message_id:
+        operation = get_current_operation(chat_id)
+        if operation and operation.operation_type in ["uploadbook", "updatebook", "deletebook"]:
+            register_user_message(chat_id, message_id)
+    
     # Handle user commands (for all users)
     if text.startswith("/start"):
         if is_admin_user:
-            send_message(
+            send_message_with_operation(
                 chat_id,
                 (
                     f"🤖 Welcome to {BOT_USERNAME} (Admin Mode)\n\n"
@@ -970,7 +1288,7 @@ def handle_message(message: Dict[str, Any]) -> None:
                 ),
             )
         else:
-            send_message(
+            send_message_with_operation(
                 chat_id,
                 (
                     f"🤖 Welcome to {BOT_USERNAME}\n\n"
@@ -985,7 +1303,7 @@ def handle_message(message: Dict[str, Any]) -> None:
 
     if text.startswith("/help"):
         if is_admin_user:
-            send_message(
+            send_message_with_operation(
                 chat_id,
                 "👤 User Commands:\n"
                 "/request <title> | <author> - Request a book\n"
@@ -1000,7 +1318,7 @@ def handle_message(message: Dict[str, Any]) -> None:
                 "/help - Show this help message"
             )
         else:
-            send_message(
+            send_message_with_operation(
                 chat_id,
                 "Commands:\n"
                 "/start - Welcome message\n"
@@ -1040,7 +1358,7 @@ def handle_message(message: Dict[str, Any]) -> None:
                     user_states[chat_id]["file_id"] = file_id
                     user_states[chat_id]["file_name"] = file_name
                     
-                    send_message_with_tracking(chat_id, f"📄 File received: {file_name}\n\nPlease enter the book title:",
+                    send_message_with_operation(chat_id, f"📄 File received: {file_name}\n\nPlease enter the book title:",
                         reply_markup=create_inline_keyboard([[
                             {"text": "❌ Cancel", "callback_data": "cancel"}
                         ]]))
@@ -1051,7 +1369,7 @@ def handle_message(message: Dict[str, Any]) -> None:
                 user_states[chat_id]["step"] = "waiting_author"
                 user_states[chat_id]["title"] = text
                 
-                send_message_with_tracking(chat_id, "Please enter the book author:",
+                send_message_with_operation(chat_id, "Please enter the book author:",
                     reply_markup=create_inline_keyboard([[
                         {"text": "❌ Cancel", "callback_data": "cancel"}
                     ]]))
@@ -1086,46 +1404,15 @@ def handle_message(message: Dict[str, Any]) -> None:
                     file_data = download_telegram_file(user_states[chat_id]["file_id"])
                     
                     # Upload to Google Drive via backend API
-                    import urllib.request as urllib_request
-                    
-                    # Create multipart form data manually
-                    boundary = f'----WebKitFormBoundary{int(time.time() * 1000)}'
-                    
-                    # Build multipart body
-                    body = b''
-                    
-                    # Add file field
-                    file_name = user_states[chat_id]["file_name"]
-                    body += f'--{boundary}\r\n'.encode()
-                    body += f'Content-Disposition: form-data; name="file"; filename="{file_name}"\r\n'.encode()
-                    body += f'Content-Type: application/pdf\r\n\r\n'.encode()
-                    body += file_data
-                    body += f'\r\n'.encode()
-                    
-                    # Add name field
-                    body += f'--{boundary}\r\n'.encode()
-                    body += f'Content-Disposition: form-data; name="name"\r\n\r\n'.encode()
-                    body += file_name.encode()
-                    body += f'\r\n'.encode()
-                    
-                    # Close boundary
-                    body += f'--{boundary}--\r\n'.encode()
-                    
-                    # Make upload request
-                    upload_url = f"{BACKEND_URL}/api/upload-to-drive"
-                    req = urllib_request.Request(
-                        upload_url,
-                        data=body,
-                        headers={
-                            'Content-Type': f'multipart/form-data; boundary={boundary}',
-                            'Content-Length': str(len(body))
+                    upload_result = backend_api_call("POST", "upload-to-drive", files={
+                        "file": {
+                            "data": file_data,
+                            "filename": user_states[chat_id]["file_name"]
                         },
-                        method='POST'
-                    )
+                        "name": user_states[chat_id]["file_name"]
+                    })
                     
-                    with urllib_request.urlopen(req, timeout=60) as response:
-                        upload_result = json.loads(response.read().decode("utf-8"))
-                        print(f"Upload API response: {upload_result}", flush=True)
+                    print(f"Upload API response: {upload_result}", flush=True)
                     
                     if not upload_result.get("success"):
                         error_msg = upload_result.get('error', 'Unknown error')
@@ -1159,16 +1446,22 @@ def handle_message(message: Dict[str, Any]) -> None:
                     del user_states[chat_id]
                     
                     # Wait for progress animation to complete, then finalize
-                    time.sleep(12)  # Wait for animation (4 steps * 2s + 2s cleanup)
-                    finalize_process(
+                    for _ in range(24):  # 12 seconds with 0.5s intervals
+                        if not get_current_operation(chat_id):
+                            return  # Operation was cancelled
+                        time.sleep(0.5)
+                    finalize_operation(
                         chat_id,
                         f"✅ Book uploaded successfully!\n\nTitle: {new_book['title']}\nAuthor: {new_book['author']}\nFile: {file_name}"
                     )
                     
                 except Exception as e:
                     print(f"Upload failed: {e}", flush=True)
-                    time.sleep(12)  # Wait for animation to complete
-                    finalize_process(chat_id, f"❌ Upload failed: {str(e)}")
+                    for _ in range(24):  # 12 seconds with 0.5s intervals
+                        if not get_current_operation(chat_id):
+                            return  # Operation was cancelled
+                        time.sleep(0.5)
+                    finalize_operation(chat_id, f"❌ Upload failed: {str(e)}")
                 
                 return
         
@@ -1208,14 +1501,43 @@ def handle_message(message: Dict[str, Any]) -> None:
                 del user_states[chat_id]
                 
                 # Wait for progress animation to complete, then finalize
-                time.sleep(8)  # Wait for animation (3 steps * 1.5s + 2s cleanup)
-                finalize_process(chat_id, f"✅ Book {field} updated successfully!\n\nBook ID: {book_id}\nNew {field}: {text}")
+                for _ in range(16):  # 8 seconds with 0.5s intervals
+                    if not get_current_operation(chat_id):
+                        return  # Operation was cancelled
+                    time.sleep(0.5)
+                finalize_operation(chat_id, f"✅ Book {field} updated successfully!\n\nBook ID: {book_id}\nNew {field}: {text}")
                 
             except Exception as e:
                 print(f"Update failed: {e}", flush=True)
-                time.sleep(8)  # Wait for animation to complete
-                finalize_process(chat_id, f"❌ Update failed: {str(e)}")
+                for _ in range(16):  # 8 seconds with 0.5s intervals
+                    if not get_current_operation(chat_id):
+                        return  # Operation was cancelled
+                    time.sleep(0.5)
+                finalize_operation(chat_id, f"❌ Update failed: {str(e)}")
             
+            return
+    
+    # Handle search query input for updatebook and deletebook
+    if chat_id in user_states:
+        state = user_states[chat_id]
+        if state.get("action") in ["updatebook_search", "deletebook_search"] and state.get("step") == "waiting_for_query":
+            # Process search query
+            search_query = text.strip()
+            action = "updatebook" if state["action"] == "updatebook_search" else "deletebook"
+            
+            # Delete the search prompt message
+            search_prompt_id = state.get("search_prompt_message_id")
+            if search_prompt_id:
+                try:
+                    api_call("deleteMessage", {
+                        "chat_id": chat_id,
+                        "message_id": search_prompt_id
+                    })
+                except Exception:
+                    pass
+            
+            # Show filtered results in the original book list message
+            show_books_with_pagination(chat_id, action, page=0, search_query=search_query)
             return
     
     # Handle commands
@@ -1239,16 +1561,16 @@ def handle_message(message: Dict[str, Any]) -> None:
         elif command == "/request":
             handle_request(chat_id, text)
         else:
-            if is_admin:
-                send_message(chat_id, "❌ Unknown command. Type /help for available commands.")
+            if is_admin_user:
+                send_message_with_operation(chat_id, "❌ Unknown command. Type /help for available commands.")
             else:
-                send_message(chat_id, "❌ Unknown command. Type /help for available commands.")
+                send_message_with_operation(chat_id, "❌ Unknown command. Type /help for available commands.")
         return
     
     # Handle non-command messages
-    if is_admin:
+    if is_admin_user:
         # Admin sent a non-command message
-        send_message(chat_id, "❌ Please use a valid command. Type /help for available commands.")
+        send_message_with_operation(chat_id, "❌ Please use a valid command. Type /help for available commands.")
     else:
         # Regular user - treat as book request
         process_user_request(chat_id, text, "plain_text")

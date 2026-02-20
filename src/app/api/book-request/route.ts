@@ -181,34 +181,6 @@ async function sendTelegramMessageWithTracking(chatId: string, text: string): Pr
   }
 }
 
-async function sendTelegramDocumentWithTracking(
-  chatId: string,
-  fileBuffer: Buffer,
-  fileName: string,
-  caption: string
-): Promise<{ ok: boolean; messageId?: string }> {
-  try {
-    const formData = new FormData();
-    formData.append('chat_id', chatId);
-    formData.append('caption', caption);
-    const bytes = new Uint8Array(fileBuffer);
-    formData.append('document', new Blob([bytes]), fileName);
-
-    const url = `https://api.telegram.org/bot${BOT_TOKEN}/sendDocument`;
-    const response = await fetch(url, {
-      method: 'POST',
-      body: formData,
-    });
-
-    const payload = await response.json();
-    if (response.ok && payload?.ok) {
-      return { ok: true, messageId: payload.result?.message_id };
-    }
-    return { ok: false };
-  } catch {
-    return { ok: false };
-  }
-}
 
 async function deleteTelegramMessage(chatId: string, messageId: string): Promise<boolean> {
   try {
@@ -247,6 +219,170 @@ async function logRequest(entry: RequestEntry) {
   await writeFile(REQUESTS_FILE, `${JSON.stringify(log, null, 2)}\n`, 'utf8');
 }
 
+async function sendBookNotFoundEmail(
+  email: string,
+  title: string,
+  author: string,
+  description: string
+): Promise<{ ok: boolean; error?: string; provider?: string; messageId?: string }> {
+  const subject = 'Book Request Update - Book Not Currently Available';
+  const text = [
+    'This email was sent by Books_Request.',
+    '',
+    'Thank you for your book request from Lib-Sek.',
+    '',
+    `Requested Title: ${title || '-'}`,
+    `Requested Author: ${author || '-'}`,
+    `Details: ${description || '-'}`,
+    '',
+    'Unfortunately, the book you requested is not currently available in our library.',
+    '',
+    'However, our team has been notified and we will work to add this book to our collection as soon as possible.',
+    '',
+    'Please check back in a few days and request this book again.',
+    '',
+    'In the meantime, feel free to browse our available collection or request other books.',
+    '',
+    'Thank you for your patience and understanding.',
+    '',
+    'Best regards,',
+    'Lib-Sek Team'
+  ].join('\n');
+  
+  const html = `
+    <h2>Book Request Update - Book Not Currently Available</h2>
+    <p>Thank you for your book request from Lib-Sek.</p>
+    
+    <h3>Request Details:</h3>
+    <ul>
+      <li><strong>Requested Title:</strong> ${title || '-'}</li>
+      <li><strong>Requested Author:</strong> ${author || '-'}</li>
+      <li><strong>Details:</strong> ${description || '-'}</li>
+    </ul>
+    
+    <p>Unfortunately, the book you requested is not currently available in our library.</p>
+    
+    <p>However, our team has been notified and we will work to add this book to our collection as soon as possible.</p>
+    
+    <p>Please check back in a few days and request this book again.</p>
+    
+    <p>In the meantime, feel free to browse our available collection or request other books.</p>
+    
+    <p>Thank you for your patience and understanding.</p>
+    
+    <p>Best regards,<br>
+    Lib-Sek Team</p>
+  `;
+
+  // Accept SendGrid key from SENDGRID_API_KEY, or RESEND_API_KEY when it uses SG.* format.
+  const sendGridKey = SENDGRID_API_KEY || (RESEND_API_KEY.startsWith('SG.') ? RESEND_API_KEY : '');
+  if (sendGridKey) {
+    if (!SENDGRID_FROM_EMAIL) {
+      return { ok: false, error: 'Missing SENDGRID_FROM_EMAIL (or RESEND_FROM_EMAIL fallback)' };
+    }
+
+    const payload = {
+      personalizations: [
+        {
+          to: [{ email }],
+          subject,
+        },
+      ],
+      from: { email: SENDGRID_FROM_EMAIL },
+      content: [
+        { type: 'text/plain', value: text },
+        { type: 'text/html', value: html },
+      ],
+    };
+
+    const response = await fetch('https://api.sendgrid.com/v3/mail/send', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${sendGridKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (response.ok) {
+      const messageId = response.headers.get('x-message-id') || undefined;
+      return { ok: true, provider: 'sendgrid', messageId };
+    }
+
+    let errorMessage = `HTTP ${response.status}`;
+    try {
+      const failure = await response.json();
+      const detail = Array.isArray(failure?.errors)
+        ? failure.errors.map((e: { message?: string }) => e?.message || JSON.stringify(e)).join('; ')
+        : JSON.stringify(failure);
+      errorMessage = `${errorMessage}: ${detail}`;
+    } catch {
+      try {
+        const bodyText = await response.text();
+        if (bodyText) {
+          errorMessage = `${errorMessage}: ${bodyText}`;
+        }
+      } catch {
+        // Ignore parsing errors and keep fallback status message.
+      }
+    }
+
+    return { ok: false, error: errorMessage, provider: 'sendgrid' };
+  }
+
+  if (!RESEND_API_KEY || !RESEND_FROM_EMAIL) {
+    return { ok: false, error: 'Missing SendGrid key or RESEND_API_KEY/RESEND_FROM_EMAIL' };
+  }
+
+  const resendPayload = {
+    from: RESEND_FROM_EMAIL,
+    to: [email],
+    subject,
+    text,
+    html,
+  };
+
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(resendPayload),
+  });
+
+  if (response.ok) {
+    let messageId: string | undefined;
+    try {
+      const payload = await response.json();
+      if (typeof payload?.id === 'string') {
+        messageId = payload.id;
+      }
+    } catch {
+      // Keep success even when parsing response body fails.
+    }
+    return { ok: true, provider: 'resend', messageId };
+  }
+
+  let errorMessage = `HTTP ${response.status}`;
+  try {
+    const failure = await response.json();
+    const detail = typeof failure?.message === 'string' ? failure.message : JSON.stringify(failure);
+    errorMessage = `${errorMessage}: ${detail}`;
+  } catch {
+    try {
+      const text = await response.text();
+      if (text) {
+        errorMessage = `${errorMessage}: ${text}`;
+      }
+    } catch {
+      // Ignore parsing errors and keep fallback status message.
+    }
+  }
+
+  return { ok: false, error: errorMessage, provider: 'resend' };
+}
+
 function formatNotFoundAdminMessage(title: string, author: string, email: string, description: string): string {
   return [
     '<b>NEW BOOK REQUEST</b>',
@@ -258,8 +394,10 @@ function formatNotFoundAdminMessage(title: string, author: string, email: string
     '<b>📧 Email:</b> <code>' + (email || '-') + '</code>',
     '<b>📝 Details:</b> <i>' + (description || '-') + '</i>',
     '',
+    '📋 <u>Delivery Status:</u> <i>Email sent to user</i>',
+    '',
     '❌ <u>Status</u>: <b>Book not found in library</b>',
-    '🔍 <u>Action</u>: <i>Please search and add this book to the collection</i>'
+    '🔍 <u>Action</u>: <i>Please search and add this book to collection</i>'
   ].join('\n');
 }
 
@@ -488,13 +626,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Email is required.' }, { status: 400 });
     }
 
-    const books = await readBooks();
+    // Parallel operations: read books and prepare admin notification
+    const [books] = await Promise.all([
+      readBooks()
+    ]);
+    
     const match = findBook(books, title, author);
 
     if (match) {
       const intermediateMessageIds: string[] = [];
 
-      // Send initial "AVAILABLE" message with tracking
+      // Send initial "AVAILABLE" message immediately
       const availableResult = await sendTelegramMessageWithTracking(
         ADMIN_CHAT_ID,
         formatAvailableAdminMessage(title, author, email, description)
@@ -503,7 +645,11 @@ export async function POST(request: NextRequest) {
         intermediateMessageIds.push(availableResult.messageId);
       }
 
-      const fetched = await fetchBookFile(match);
+      // Start file fetch in parallel with email preparation
+      const [fetched] = await Promise.all([
+        fetchBookFile(match)
+      ]);
+      
       if (!fetched) {
         const entry: RequestEntry = {
           timestamp: new Date().toISOString(),
@@ -514,15 +660,16 @@ export async function POST(request: NextRequest) {
           userType,
           status: 'delivery_failed',
         };
-        await logRequest(entry);
-
-        await sendTelegramMessage(
-          ADMIN_CHAT_ID,
-          `Delivery failed.\nTitle: ${title || '-'}\nAuthor: ${author || '-'}\nEmail: ${email || '-'}\nReason: Could not download file from link.`
-        );
-
-        // Clear intermediate messages on failure
-        await clearIntermediateMessages(ADMIN_CHAT_ID, intermediateMessageIds);
+        
+        // Parallel: log request and send failure notification
+        await Promise.all([
+          logRequest(entry),
+          sendTelegramMessage(
+            ADMIN_CHAT_ID,
+            `Delivery failed.\nTitle: ${title || '-'}\nAuthor: ${author || '-'}\nEmail: ${email || '-'}\nReason: Could not download file from link.`
+          ),
+          clearIntermediateMessages(ADMIN_CHAT_ID, intermediateMessageIds)
+        ]);
 
         return NextResponse.json(
           {
@@ -533,33 +680,24 @@ export async function POST(request: NextRequest) {
         );
       }
 
-      // Send delivery preview message with tracking
-      const telegramResult = await sendTelegramDocumentWithTracking(
-        ADMIN_CHAT_ID,
-        fetched.fileBuffer,
-        fetched.fileName,
-        `Book delivery preview:\n${match.title} by ${match.author}`
-      );
-      if (telegramResult.messageId) {
-        intermediateMessageIds.push(telegramResult.messageId);
-      }
+      // Parallel: send email only (no Telegram file upload)
+      const [emailResult] = await Promise.all([
+        sendBookEmail(
+          email,
+          match,
+          fetched.fileBuffer,
+          fetched.fileName,
+          fetched.mimeType,
+          fetched.downloadUrl,
+          title,
+          author,
+          description
+        )
+      ]);
 
-      const telegramDelivered = telegramResult.ok;
-
-      const emailResult = await sendBookEmail(
-        email,
-        match,
-        fetched.fileBuffer,
-        fetched.fileName,
-        fetched.mimeType,
-        fetched.downloadUrl,
-        title,
-        author,
-        description
-      );
       const emailed = emailResult.ok;
-
-      const succeeded = telegramDelivered && emailed;
+      const succeeded = emailed;
+      
       const entry: RequestEntry = {
         timestamp: new Date().toISOString(),
         title,
@@ -569,65 +707,64 @@ export async function POST(request: NextRequest) {
         userType,
         status: succeeded ? 'delivered' : 'delivery_failed',
       };
-      await logRequest(entry);
+      
+      if (succeeded) {
+        // Parallel: log request and send completion message
+        await Promise.all([
+          logRequest(entry),
+          sendTelegramMessageWithTracking(
+            ADMIN_CHAT_ID,
+            [
+              '<b>🎉 DELIVERY COMPLETED 🎉</b>',
+              '',
+              '<i>📚 Book Details:</i>',
+              '<b>📖 Title:</b> <code>' + (title || '-') + '</code>',
+              '<b>✍️ Author:</b> <code>' + (author || '-') + '</code>',
+              '<b>📧 Email:</b> <code>' + (email || '-') + '</code>',
+              '',
+              '<i>📋 Delivery Status:</i>',
+              ' <b>Email Send:</b> <code>✅ accepted (queued)</code>',
+              '🔌 <b>Email Provider:</b> <code>' + (emailResult.provider || '-') + '</code>',
+              '🆔 <b>Email Message ID:</b> <code>' + (emailResult.messageId || '-') + '</code>',
+            ].join('\n')
+          )
+        ]);
 
-      if (!succeeded) {
-        await sendTelegramMessage(
-          ADMIN_CHAT_ID,
-          [
-            'Delivery failed.',
-            `Title: ${title || '-'}`,
-            `Author: ${author || '-'}`,
-            `Email: ${email || '-'}`,
-            `Telegram Upload: ${telegramDelivered ? 'ok' : 'failed'}`,
-            `Email Send: ${emailed ? 'ok' : 'failed'}`,
-            `Email Error: ${emailResult.error || '-'}`,
-          ].join('\n')
-        );
+        // Clear only intermediate messages (not the success message)
+        setTimeout(async () => {
+          await clearIntermediateMessages(ADMIN_CHAT_ID, intermediateMessageIds);
+        }, 2000);
 
-        // Clear intermediate messages on failure
-        await clearIntermediateMessages(ADMIN_CHAT_ID, intermediateMessageIds);
+        return NextResponse.json({ success: true, message: 'Book sent to email.' });
+      } else {
+        // Parallel: log request, send failure notification, and clear messages
+        await Promise.all([
+          logRequest(entry),
+          sendTelegramMessage(
+            ADMIN_CHAT_ID,
+            [
+              'Delivery failed.',
+              `Title: ${title || '-'}`,
+              `Author: ${author || '-'}`,
+              `Email: ${email || '-'}`,
+              `Email Send: ${emailed ? 'ok' : 'failed'}`,
+              `Email Error: ${emailResult.error || '-'}`,
+            ].join('\n')
+          ),
+          clearIntermediateMessages(ADMIN_CHAT_ID, intermediateMessageIds)
+        ]);
 
         return NextResponse.json(
           {
             error:
-              `Book found, but final delivery failed. ${emailResult.error || 'Check Telegram bot permissions and RESEND email configuration.'}`,
+              `Book found, but email delivery failed. ${emailResult.error || 'Check RESEND email configuration.'}`,
           },
           { status: 502 }
         );
       }
-
-      // Send final completion message
-      const completionResult = await sendTelegramMessageWithTracking(
-        ADMIN_CHAT_ID,
-        [
-          '<b>🎉 DELIVERY COMPLETED 🎉</b>',
-          '',
-          '<i>📚 Book Details:</i>',
-          '<b>📖 Title:</b> <code>' + (title || '-') + '</code>',
-          '<b>✍️ Author:</b> <code>' + (author || '-') + '</code>',
-          '<b>📧 Email:</b> <code>' + (email || '-') + '</code>',
-          '',
-          '<i>📋 Delivery Status:</i>',
-          '📤 <b>Telegram Upload:</b> <code>✅ ok</code>',
-          '📧 <b>Email Send:</b> <code>✅ accepted (queued)</code>',
-          '🔌 <b>Email Provider:</b> <code>' + (emailResult.provider || '-') + '</code>',
-          '🆔 <b>Email Message ID:</b> <code>' + (emailResult.messageId || '-') + '</code>',
-        ].join('\n')
-      );
-
-      if (!completionResult.ok) {
-        console.error('Failed to send completion message');
-      }
-
-      // Wait a moment for the completion message to be fully delivered, then clear intermediate messages
-      setTimeout(async () => {
-        await clearIntermediateMessages(ADMIN_CHAT_ID, intermediateMessageIds);
-      }, 2000);
-
-      return NextResponse.json({ success: true, message: 'Book delivered to Telegram and sent to email.' });
     }
 
+    // Book not found - parallel operations
     const entry: RequestEntry = {
       timestamp: new Date().toISOString(),
       title,
@@ -637,14 +774,20 @@ export async function POST(request: NextRequest) {
       userType,
       status: 'not_found',
     };
-    await logRequest(entry);
+    
+    // Send email to user about book not found
+    const notFoundEmailResult = await sendBookNotFoundEmail(email, title, author, description);
+    
+    await Promise.all([
+      logRequest(entry),
+      sendTelegramMessage(
+        ADMIN_CHAT_ID,
+        formatNotFoundAdminMessage(title, author, email, description) + 
+        `\n\n📧 <b>User Notified:</b> <code>${notFoundEmailResult.ok ? '✅ Email sent' : '❌ Email failed'}</code>`
+      )
+    ]);
 
-    await sendTelegramMessage(
-      ADMIN_CHAT_ID,
-      formatNotFoundAdminMessage(title, author, email, description)
-    );
-
-    return NextResponse.json({ success: true, message: 'Request logged. Admin has been notified.' });
+    return NextResponse.json({ success: true, message: 'Request logged and user notified.' });
   } catch (error) {
     console.error('Book request API error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

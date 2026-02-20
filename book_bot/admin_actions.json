@@ -409,5 +409,155 @@
         }
       }
     }
+  },
+  {
+    "timestamp": "2026-02-20T01:04:35.687659+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "/uploadbook",
+      "author": "/uploadbook",
+      "file_name": "Death_of_the_goddess_a_poem_in_twelve_cantos_Patrick_Colm_Hogan.pdf",
+      "file_id": "BQACAgUAAxkBAAICKWmXso2MObRnIneVFQrldbb9LhNEAAJqHQACIGrBVPfWa0iH6L_dOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/16DlVV9mJDJ_zq70iaa5lR-jM2WnzbqRo/view?usp=sharing",
+        "fileName": "Death_of_the_goddess_a_poem_in_twelve_cantos_Patrick_Colm_Hogan.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 17,
+          "title": "/uploadbook",
+          "author": "/uploadbook",
+          "file_link": "https://drive.google.com/file/d/16DlVV9mJDJ_zq70iaa5lR-jM2WnzbqRo/view?usp=sharing",
+          "added_at": "2026-02-20T01:04:35.678Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:08:48.647538+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "The Death of the Goddess: A Poem in Twelve Cantos",
+      "author": "Patrick Colm Hogan",
+      "file_name": "Death_of_the_goddess_a_poem_in_twelve_cantos_Patrick_Colm_Hogan.pdf",
+      "file_id": "BQACAgUAAxkBAAICKWmXso2MObRnIneVFQrldbb9LhNEAAJqHQACIGrBVPfWa0iH6L_dOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1vNB2KwGCnfn8XAwlGDLc84UZZL_KmwSl/view?usp=sharing",
+        "fileName": "Death_of_the_goddess_a_poem_in_twelve_cantos_Patrick_Colm_Hogan.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 17,
+          "title": "The Death of the Goddess: A Poem in Twelve Cantos",
+          "author": "Patrick Colm Hogan",
+          "file_link": "https://drive.google.com/file/d/1vNB2KwGCnfn8XAwlGDLc84UZZL_KmwSl/view?usp=sharing",
+          "added_at": "2026-02-20T01:08:48.638Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:44:48.523279+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Toward A Theory of Cognitive Poetics",
+      "author": "Reuven Tsur",
+      "file_name": "Toward a Theory of Cognitive Poetics.pdf",
+      "file_id": "BQACAgUAAxkBAAICXGmXvE-IIgeX6K8ft0K8cBL8Gi7VAAJnHQACIGrBVLPQ5l_XhAhMOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1HxUVsQ4XJxEKVLpE3-pzjHgTLkU_hIrW/view?usp=sharing",
+        "fileName": "Toward_a_Theory_of_Cognitive_Poetics.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 18,
+          "title": "Toward A Theory of Cognitive Poetics",
+          "author": "Reuven Tsur",
+          "file_link": "https://drive.google.com/file/d/1HxUVsQ4XJxEKVLpE3-pzjHgTLkU_hIrW/view?usp=sharing",
+          "added_at": "2026-02-20T01:44:48.515Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:54:31.717027+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "College Algebra - Third Edition",
+      "author": "Robert F. Blitzer",
+      "file_name": "College Algebra, Third Edition by Robert F. Blitzer.pdf",
+      "file_id": "BQACAgUAAxkBAAICcGmXvpJrG9EZs2HPsERCP_Ibu3-jAALuGgACTfegVX9R0c-MLxaIOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1QaFbvU3ZUh1ap_nlNB0VzvQ3kLzGgjPl/view?usp=sharing",
+        "fileName": "College_Algebra__Third_Edition_by_Robert_F._Blitzer.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 19,
+          "title": "College Algebra - Third Edition",
+          "author": "Robert F. Blitzer",
+          "file_link": "https://drive.google.com/file/d/1QaFbvU3ZUh1ap_nlNB0VzvQ3kLzGgjPl/view?usp=sharing",
+          "added_at": "2026-02-20T01:54:31.703Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-20T01:57:23.531618+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "The Power of Your Subconscious Mind",
+      "author": "Dr. Joseph Murphy",
+      "file_name": "The Power of Your Subconscious Mind @Amazonebook (1).pdf",
+      "file_id": "BQACAgUAAxkBAAICeWmXvzMkV6TsZNg88jrdXTg-Byy3AALXFAACFoSYVr2rGd0wYbd8OgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1fqRJ9ISZxcw20F-oSv83ECH0ED4xg_GG/view?usp=sharing",
+        "fileName": "The_Power_of_Your_Subconscious_Mind__Amazonebook__1_.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 20,
+          "title": "The Power of Your Subconscious Mind",
+          "author": "Dr. Joseph Murphy",
+          "file_link": "https://drive.google.com/file/d/1fqRJ9ISZxcw20F-oSv83ECH0ED4xg_GG/view?usp=sharing",
+          "added_at": "2026-02-20T01:57:23.524Z"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-02-20T02:00:34.702811+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "The Quiet Side of Wealth - Why Money Is Not the Problem \u2014 And Awareness Is The Solution",
+      "author": "Sujeet Charuasia",
+      "file_name": "The Quiet side of wealth.pdf",
+      "file_id": "BQACAgUAAxkBAAICgmmXv75mapAIraxJcJIrX31tNa1IAAKIGwAChmvJVsnzYL8q0yUHOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://drive.google.com/file/d/1LI8xPmCBaew3e0PqgP2YaUiiSVHaunpf/view?usp=sharing",
+        "fileName": "The_Quiet_side_of_wealth.pdf",
+        "message": "File uploaded successfully to Google Drive"
+      },
+      "response": {
+        "book": {
+          "id": 21,
+          "title": "The Quiet Side of Wealth - Why Money Is Not the Problem \u2014 And Awareness Is The Solution",
+          "author": "Sujeet Charuasia",
+          "file_link": "https://drive.google.com/file/d/1LI8xPmCBaew3e0PqgP2YaUiiSVHaunpf/view?usp=sharing",
+          "added_at": "2026-02-20T02:00:34.695Z"
+        }
+      }
+    }
   }
 ]

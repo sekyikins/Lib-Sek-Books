@@ -296,14 +296,15 @@ function AddBooksContent() {
       });
       
       if (!response.ok) {
-        throw new Error('Upload failed');
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Upload failed');
       }
       
       const result = await response.json();
       return result.fileUrl;
-    } catch {
+    } catch (error) {
       // Fallback to mock URL for demo
-      console.warn('Google Drive upload not implemented, using mock URL');
+      console.warn('Google Drive upload not implemented, using mock URL:', error);
       return `https://drive.google.com/file/d/mock_${Date.now()}/view?usp=sharing`;
     }
   };
