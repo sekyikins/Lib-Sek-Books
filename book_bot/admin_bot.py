@@ -562,13 +562,22 @@ def backend_api_call(method: str, endpoint: str, data: Dict[str, Any] = None, fi
         # Build multipart body
         body = b''
         for field_name, file_data in files.items():
-            if isinstance(file_data, bytes):
-                # File field
+            if isinstance(file_data, dict) and "data" in file_data:
+                # File field wrapped in dictionary
+                data = file_data.get("data")
                 filename = file_data.get("filename", "file.pdf")
                 body += f'--{boundary}\r\n'.encode()
                 body += f'Content-Disposition: form-data; name="{field_name}"; filename="{filename}"\r\n'.encode()
                 body += f'Content-Type: application/pdf\r\n\r\n'.encode()
-                body += file_data.get("data", file_data)
+                body += data if isinstance(data, bytes) else str(data).encode()
+                body += f'\r\n'.encode()
+            elif isinstance(file_data, bytes):
+                # Raw file field
+                filename = "file.pdf"
+                body += f'--{boundary}\r\n'.encode()
+                body += f'Content-Disposition: form-data; name="{field_name}"; filename="{filename}"\r\n'.encode()
+                body += f'Content-Type: application/pdf\r\n\r\n'.encode()
+                body += file_data
                 body += f'\r\n'.encode()
             else:
                 # Regular form field
@@ -1401,9 +1410,12 @@ def handle_message(message: Dict[str, Any]) -> None:
                 # Process the upload
                 try:
                     # Download file from Telegram
+                    print(f"DEBUG: Downloading file from Telegram with file_id: {user_states[chat_id]['file_id']}", flush=True)
                     file_data = download_telegram_file(user_states[chat_id]["file_id"])
+                    print(f"DEBUG: Downloaded {len(file_data)} bytes from Telegram", flush=True)
                     
                     # Upload to Google Drive via backend API
+                    print(f"DEBUG: Uploading to backend API endpoint: upload-to-drive", flush=True)
                     upload_result = backend_api_call("POST", "upload-to-drive", files={
                         "file": {
                             "data": file_data,

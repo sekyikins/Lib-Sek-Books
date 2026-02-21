@@ -142,5 +142,14 @@
     "source": "telegram",
     "status": "available",
     "selected_book": "Frank Wood's Business Accounting: 105h Edition"
+  },
+  {
+    "timestamp": "2026-02-21T01:32:24.900808+00:00",
+    "title": "Html",
+    "author": "",
+    "telegramChatId": "8262093986",
+    "source": "telegram",
+    "status": "available",
+    "selected_book": "Introduction to HTML and CSS"
   }
 ]
