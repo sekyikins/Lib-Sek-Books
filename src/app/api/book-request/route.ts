@@ -3,8 +3,6 @@ import { readFile, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import path from 'path';
 
-export const runtime = 'nodejs';
-
 type BookEntry = {
   title: string;
   author: string;
