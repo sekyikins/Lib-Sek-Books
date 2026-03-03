@@ -1,23 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readFile, writeFile } from 'fs/promises';
-import { existsSync } from 'fs';
-import path from 'path';
+import { readBooks, logRequest, type BookEntry, type RequestEntry } from '@/lib/data-store';
 
-type BookEntry = {
-  title: string;
-  author: string;
-  file_link: string;
-};
-
-type RequestEntry = {
-  timestamp: string;
-  title: string;
-  author: string;
-  description?: string;
-  email: string;
-  userType: string;
-  status: 'available' | 'not_found' | 'delivery_failed' | 'delivered';
-};
 
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID || '';
@@ -26,8 +9,6 @@ const RESEND_FROM_EMAIL = process.env.RESEND_FROM_EMAIL || '';
 const SENDGRID_API_KEY = process.env.SENDGRID_API_KEY || '';
 const SENDGRID_FROM_EMAIL = process.env.SENDGRID_FROM_EMAIL || RESEND_FROM_EMAIL;
 
-const BOOKS_FILE = path.join(process.cwd(), 'book_bot', 'books.json');
-const REQUESTS_FILE = path.join(process.cwd(), 'book_bot', 'requests.json');
 
 function normalize(value: string): string {
   return value.trim().toLowerCase();
@@ -77,49 +58,6 @@ function toDirectDownloadLink(link: string): string {
   return `https://drive.google.com/uc?export=download&id=${id}`;
 }
 
-async function ensureRequestsFile() {
-  if (!existsSync(REQUESTS_FILE)) {
-    await writeFile(REQUESTS_FILE, '[]\n', 'utf8');
-  }
-}
-
-async function readRequestLog(): Promise<RequestEntry[]> {
-  await ensureRequestsFile();
-  try {
-    const raw = await readFile(REQUESTS_FILE, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-    return parsed as RequestEntry[];
-  } catch {
-    return [];
-  }
-}
-
-async function readBooks(): Promise<BookEntry[]> {
-  if (!existsSync(BOOKS_FILE)) {
-    return [];
-  }
-
-  try {
-    const raw = await readFile(BOOKS_FILE, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter((item): item is BookEntry => {
-      return (
-        typeof item?.title === 'string' &&
-        typeof item?.author === 'string' &&
-        typeof item?.file_link === 'string'
-      );
-    });
-  } catch {
-    return [];
-  }
-}
 
 function findBook(books: BookEntry[], title: string, author: string): BookEntry | undefined {
   const wantedTitle = normalize(title);
@@ -211,11 +149,6 @@ async function clearIntermediateMessages(chatId: string, messageIds: string[]): 
   }
 }
 
-async function logRequest(entry: RequestEntry) {
-  const log = await readRequestLog();
-  log.push(entry);
-  await writeFile(REQUESTS_FILE, `${JSON.stringify(log, null, 2)}\n`, 'utf8');
-}
 
 async function sendBookNotFoundEmail(
   email: string,

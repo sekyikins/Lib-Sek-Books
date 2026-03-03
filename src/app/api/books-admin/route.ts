@@ -1,49 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { existsSync } from 'fs';
-import { readFile, writeFile } from 'fs/promises';
-import path from 'path';
+import { readBooks, writeBooks, type BookEntry } from '@/lib/data-store';
 
-type BookJsonEntry = {
-  title: string;
-  author: string;
-  file_link: string;
-  added_at?: string;
-};
+type BookJsonEntry = BookEntry;
 
-const BOOKS_FILE = path.join(process.cwd(), 'book_bot', 'books.json');
 
-async function ensureBooksFile() {
-  if (!existsSync(BOOKS_FILE)) {
-    await writeFile(BOOKS_FILE, '[]\n', 'utf8');
-  }
-}
-
-async function readBooks(): Promise<BookJsonEntry[]> {
-  await ensureBooksFile();
-
-  try {
-    const raw = await readFile(BOOKS_FILE, 'utf8');
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed.filter((item): item is BookJsonEntry => {
-      return (
-        typeof item?.title === 'string' &&
-        typeof item?.author === 'string' &&
-        typeof item?.file_link === 'string' &&
-        (typeof item?.added_at === 'string' || typeof item?.added_at === 'undefined')
-      );
-    });
-  } catch {
-    return [];
-  }
-}
-
-async function writeBooks(books: BookJsonEntry[]) {
-  await writeFile(BOOKS_FILE, `${JSON.stringify(books, null, 2)}\n`, 'utf8');
-}
 
 function withIds(books: BookJsonEntry[]) {
   return books.map((book, index) => ({
