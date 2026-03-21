@@ -70,7 +70,7 @@ function BookRequestContent() {
     return (
       <div className="min-h-screen flex flex-col gap-5 items-center justify-center">
         <div className="text-lg text-blue-600">Loading...</div>
-        <div className="border-b-3 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+        <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
       </div>
     );
   }

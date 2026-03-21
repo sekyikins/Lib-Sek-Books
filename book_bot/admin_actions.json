@@ -539,7 +539,7 @@
     "timestamp": "2026-02-20T02:00:34.702811+00:00",
     "action": "upload_book",
     "details": {
-      "title": "The Quiet Side of Wealth - Why Money Is Not the Problem — And Awareness Is The Solution",
+      "title": "The Quiet Side of Wealth - Why Money Is Not the Problem \u2014 And Awareness Is The Solution",
       "author": "Sujeet Charuasia",
       "file_name": "The Quiet side of wealth.pdf",
       "file_id": "BQACAgUAAxkBAAICgmmXv75mapAIraxJcJIrX31tNa1IAAKIGwAChmvJVsnzYL8q0yUHOgQ",
@@ -552,7 +552,7 @@
       "response": {
         "book": {
           "id": 21,
-          "title": "The Quiet Side of Wealth - Why Money Is Not the Problem — And Awareness Is The Solution",
+          "title": "The Quiet Side of Wealth - Why Money Is Not the Problem \u2014 And Awareness Is The Solution",
           "author": "Sujeet Charuasia",
           "file_link": "https://drive.google.com/file/d/1LI8xPmCBaew3e0PqgP2YaUiiSVHaunpf/view?usp=sharing",
           "added_at": "2026-02-20T02:00:34.695Z"
@@ -583,6 +583,102 @@
           "added_at": "2026-02-21T01:45:26.166Z"
         }
       }
+    }
+  },
+  {
+    "timestamp": "2026-03-21T02:07:24.224837+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Stop Chasing Hapiness",
+      "author": "Frank Martela",
+      "file_name": "Stop_Chasing_Happiness_-_Frank_Martela(@Amazonebook).pdf",
+      "file_id": "BQACAgUAAxkBAAIEyGm9_LftAmb4Fpp1_d11E_oehTVjAALWIQACPvF5V0uyAY7alfXKOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://ewirgpnizjxwpsiwvqyf.supabase.co/storage/v1/object/public/Books/Stop_Chasing_Happiness_-_Frank_Martela__Amazoneboo_1774058839047.pdf",
+        "path": "Stop_Chasing_Happiness_-_Frank_Martela__Amazoneboo_1774058839047.pdf",
+        "bucket": "Books"
+      },
+      "response": {
+        "book": {
+          "id": "LOCAL_g5q0s2rl2",
+          "title": "Stop Chasing Hapiness",
+          "author": "Frank Martela",
+          "file_link": "https://ewirgpnizjxwpsiwvqyf.supabase.co/storage/v1/object/public/Books/Stop_Chasing_Happiness_-_Frank_Martela__Amazoneboo_1774058839047.pdf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-03-21T02:27:25.275999+00:00",
+    "action": "upload_book",
+    "details": {
+      "title": "Energize Your Mind",
+      "author": "Gaur Gopal Das",
+      "file_name": "Das,_Gaur_Gopal_Energize_Your_Mind_2022,_Sourcebooks,_Incorporated.pdf",
+      "file_id": "BQACAgUAAxkBAAIE2Wm-AdHPHPu6VBWfU-vH2nvaEz6nAAL8HAACOcloVywziIg-Yq7JOgQ",
+      "upload_result": {
+        "success": true,
+        "fileUrl": "https://ewirgpnizjxwpsiwvqyf.supabase.co/storage/v1/object/public/Books/Das__Gaur_Gopal_Energize_Your_Mind_2022__Sourceboo_1774060040195.pdf",
+        "path": "Das__Gaur_Gopal_Energize_Your_Mind_2022__Sourceboo_1774060040195.pdf",
+        "bucket": "Books"
+      },
+      "response": {
+        "book": {
+          "id": "LOCAL_4t3bzruk6",
+          "title": "Energize Your Mind",
+          "author": "Gaur Gopal Das",
+          "file_link": "https://ewirgpnizjxwpsiwvqyf.supabase.co/storage/v1/object/public/Books/Das__Gaur_Gopal_Energize_Your_Mind_2022__Sourceboo_1774060040195.pdf"
+        }
+      }
+    }
+  },
+  {
+    "timestamp": "2026-03-21T09:16:37.999477",
+    "action": "upload_book",
+    "details": {
+      "title": "The Order of Time",
+      "author": "Carlo Rovelli"
+    }
+  },
+  {
+    "timestamp": "2026-03-21T09:28:45.963794",
+    "action": "upload_book",
+    "details": {
+      "title": "The Happiest Man on Earth",
+      "author": "Eddie Jaku"
+    }
+  },
+  {
+    "timestamp": "2026-03-21T09:53:11.531790",
+    "action": "upload_book",
+    "details": {
+      "title": "Unstoppable Mindset: How to Use What You Have to Get What You Want",
+      "author": "Alden Mills"
+    }
+  },
+  {
+    "timestamp": "2026-03-21T10:16:32.574222",
+    "action": "upload_book",
+    "details": {
+      "title": "The Let Them Theory",
+      "author": "Mel Robbins"
+    }
+  },
+  {
+    "timestamp": "2026-03-21T10:28:38.069679",
+    "action": "upload_book",
+    "details": {
+      "title": "What Happened to You? Conversations on Trauma, Resilience, and Healing",
+      "author": "Bruce D. Perry MD PhD, Oprah Winfrey"
+    }
+  },
+  {
+    "timestamp": "2026-03-21T19:04:52.930294",
+    "action": "upload_book",
+    "details": {
+      "title": "Machine Learning for Industrial Applications",
+      "author": "Kolla Bhanu Prakash"
     }
   }
 ]

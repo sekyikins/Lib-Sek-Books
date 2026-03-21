@@ -3,7 +3,7 @@ import type { User } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { AuthUser, Role } from '@/types/auth';
+import { Role } from '@/types/auth';
 import type { JWT } from 'next-auth/jwt';
 import type { Session } from 'next-auth';
 
@@ -11,27 +11,7 @@ interface ExtendedUser extends User {
   role: Role;
 }
 
-// Mock user database - in production, replace with actual database
-const mockUsers: AuthUser[] = [
-  {
-    id: '1',
-    email: 'admin@example.com',
-    name: 'Admin User',
-    role: Role.ADMIN,
-  },
-  {
-    id: '2',
-    email: 'user@example.com',
-    name: 'Regular User',
-    role: Role.USER,
-  },
-];
-
-// Mock password storage - in production, store hashed passwords
-const mockPasswords: Record<string, string> = {
-  'admin@example.com': '$2b$10$ea07Y0oA9ptEjHUYoRJMBefUUTgTiKqnHN8nlOOyYUFY4MhBooJDW', // secret
-  'user@example.com': '$2b$10$ea07Y0oA9ptEjHUYoRJMBefUUTgTiKqnHN8nlOOyYUFY4MhBooJDW', // secret
-};
+import { findUserByEmail } from '@/lib/db';
 
 export const authOptions = {
   providers: [
@@ -46,25 +26,33 @@ export const authOptions = {
           return null;
         }
 
-        const user = mockUsers.find(u => u.email === credentials.email);
+        console.log('Authorize attempt for email:', credentials.email);
+        const user = await findUserByEmail(credentials.email);
+        
         if (!user) {
+          console.log('User not found in database:', credentials.email);
           return null;
         }
+
+        console.log('User found:', user.email, 'Role:', user.role);
+        console.log('Verifying password...');
 
         const isPasswordValid = await bcrypt.compare(
           credentials.password,
-          mockPasswords[credentials.email]
+          user.passwordHash
         );
 
         if (!isPasswordValid) {
+          console.log('Invalid password for user:', credentials.email);
           return null;
         }
 
+        console.log('Login successful for user:', credentials.email);
         return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
+          id: user.id || '',
+          email: user.email || '',
+          name: user.name || '',
+          role: (user.role as Role) || Role.USER,
         };
       }
     })

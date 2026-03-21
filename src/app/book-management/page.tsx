@@ -8,11 +8,16 @@ import { useRouter } from 'next/navigation';
 import { FiPlus } from 'react-icons/fi';
 
 type ManagedBook = {
-  id: number;
+  id: string;
   title: string;
   author: string;
   file_link: string;
   added_at?: string;
+  isbn?: string;
+  description?: string;
+  published_date?: string;
+  language?: string;
+  genre?: string;
 };
 
 
@@ -46,7 +51,7 @@ export default function BookManagementPage() {
   }, []);
 
 
-  const handleDelete = async (bookId: number) => {
+  const handleDelete = async (bookId: string) => {
     if (!confirm('Are you sure you want to delete this book?')) {
       return;
     }
@@ -72,7 +77,7 @@ export default function BookManagementPage() {
     return (
       <div className="min-h-screen flex flex-col gap-5 items-center justify-center">
         <div className="text-lg text-blue-600">Loading...</div>
-        <div className="border-b-3 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+        <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
       </div>
     );
   }
@@ -119,7 +124,7 @@ export default function BookManagementPage() {
                   {loading ? (
                     <div className="text-center py-12">
                       <div className="text-lg text-blue-500">Loading books...</div>
-                      <div className="border-b-3 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+                      <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
                     </div>
                   ) : (
                     <div className="overflow-y-auto shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
@@ -131,6 +136,9 @@ export default function BookManagementPage() {
                             </th>
                             <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               Author
+                            </th>
+                            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Genre
                             </th>
                             <th className="w-[10%] py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                               File Link
@@ -152,6 +160,9 @@ export default function BookManagementPage() {
                               <td className="px-6 py-4 text-sm text-gray-500 align-top">
                                 {book.author}
                               </td>
+                              <td className="px-6 py-4 text-sm text-gray-500 align-top">
+                                {book.genre || '-'}
+                              </td>
                               <td className="py-4 text-sm text-gray-500 align-top break-all">
                                 <a
                                   href={book.file_link}
@@ -168,7 +179,20 @@ export default function BookManagementPage() {
                               <td className="flex justify-around py-4 whitespace-nowrap text-sm font-medium space-x-2">
                                 <button
                                   title='Edit Book'
-                                  onClick={() => router.push(`/add-books?edit=${book.id}&title=${encodeURIComponent(book.title)}&author=${encodeURIComponent(book.author)}&link=${encodeURIComponent(book.file_link)}`)}
+                                  onClick={() => {
+                                    const params = new URLSearchParams({
+                                      edit: book.id,
+                                      title: book.title,
+                                      author: book.author,
+                                      link: book.file_link,
+                                      isbn: book.isbn || '',
+                                      description: book.description || '',
+                                      published_date: book.published_date || '',
+                                      language: book.language || 'English',
+                                      genre: book.genre || ''
+                                    });
+                                    router.push(`/add-books?${params.toString()}`);
+                                  }}
                                   className="text-indigo-600 hover:text-indigo-900 hover:cursor-pointer"
                                 >
                                   Edit

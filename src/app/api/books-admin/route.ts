@@ -1,89 +1,77 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readBooks, writeBooks, type BookEntry } from '@/lib/data-store';
-
-type BookJsonEntry = BookEntry;
-
-
-
-function withIds(books: BookJsonEntry[]) {
-  return books.map((book, index) => ({
-    id: index,
-    ...book,
-  }));
-}
+import { readBooks } from '@/lib/data-store';
+import { createBook, deleteBook as dbDeleteBook } from '@/lib/db';
 
 export async function GET() {
-  const books = await readBooks();
-  return NextResponse.json({ books: withIds(books) });
+  try {
+    const books = await readBooks();
+    return NextResponse.json({ books });
+  } catch (error) {
+    console.error('books-admin GET error:', error);
+    return NextResponse.json({ error: 'Failed to fetch books' }, { status: 500 });
+  }
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     
-    // Handle single book (existing functionality)
+    // Handle single book
     if (body.title || body.author || body.file_link) {
-      const title = typeof body?.title === 'string' ? body.title.trim() : '';
-      const author = typeof body?.author === 'string' ? body.author.trim() : '';
-      const fileLink = typeof body?.file_link === 'string' ? body.file_link.trim() : '';
+      const { title, author, file_link, cover_link, isbn, description, published_date, language, genre } = body;
 
-      if (!title || !author || !fileLink) {
+      if (!title || !author || !file_link) {
         return NextResponse.json(
           { error: 'title, author, and file_link are required.' },
           { status: 400 }
         );
       }
 
-      const newBook: BookJsonEntry = {
+      const bookId = await createBook({
         title,
         author,
-        file_link: fileLink,
-        added_at: new Date().toISOString(),
-      };
+        fileUrl: file_link,
+        coverUrl: cover_link,
+        isbn,
+        description,
+        publishedDate: published_date,
+        language,
+        genre
+      });
 
-      const books = await readBooks();
-      books.push(newBook);
-
-      await writeBooks(books);
-      return NextResponse.json({ book: { id: books.length - 1, ...newBook } }, { status: 201 });
+      return NextResponse.json({ book: { id: bookId, title, author, file_link, cover_link } }, { status: 201 });
     }
     
-    // Handle multiple books (new functionality)
+    // Handle multiple books
     if (body.books && Array.isArray(body.books)) {
-      const newBooks: BookJsonEntry[] = [];
-      
+      const addedBooks = [];
       for (const bookData of body.books) {
-        const title = typeof bookData?.title === 'string' ? bookData.title.trim() : '';
-        const author = typeof bookData?.author === 'string' ? bookData.author.trim() : '';
-        const fileLink = typeof bookData?.file_link === 'string' ? bookData.file_link.trim() : '';
+        const { title, author, file_link, cover_link, isbn, description, published_date, language, genre } = bookData;
 
-        if (!title || !author || !fileLink) {
-          return NextResponse.json(
-            { error: 'All books must have title, author, and file_link.' },
-            { status: 400 }
-          );
+        if (title && author && file_link) {
+          const id = await createBook({ 
+            title, 
+            author, 
+            fileUrl: file_link,
+            coverUrl: cover_link,
+            isbn,
+            description,
+            publishedDate: published_date,
+            language,
+            genre
+          });
+          addedBooks.push({ id, title, author, file_link, cover_link });
         }
-
-        newBooks.push({
-          title,
-          author,
-          file_link: fileLink,
-          added_at: new Date().toISOString(),
-        });
       }
 
-      const books = await readBooks();
-      books.push(...newBooks);
-
-      await writeBooks(books);
       return NextResponse.json({ 
-        message: `Successfully added ${newBooks.length} books`,
-        books: withIds(newBooks)
+        message: `Successfully added ${addedBooks.length} books`,
+        books: addedBooks
       }, { status: 201 });
     }
 
     return NextResponse.json(
-      { error: 'Invalid request format. Provide either a single book or an array of books.' },
+      { error: 'Invalid request format.' },
       { status: 400 }
     );
   } catch (error) {
@@ -92,104 +80,18 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function PUT(request: NextRequest) {
-  try {
-    const body = await request.json();
-    const { id, title, author, file_link } = body;
-
-    if (typeof id !== 'number' || id < 0) {
-      return NextResponse.json(
-        { error: 'Valid book ID is required.' },
-        { status: 400 }
-      );
-    }
-
-    const books = await readBooks();
-    
-    if (id >= books.length) {
-      return NextResponse.json(
-        { error: 'Book not found.' },
-        { status: 404 }
-      );
-    }
-
-    // Update only provided fields
-    if (title !== undefined) {
-      if (typeof title !== 'string' || !title.trim()) {
-        return NextResponse.json(
-          { error: 'Title must be a non-empty string.' },
-          { status: 400 }
-        );
-      }
-      books[id].title = title.trim();
-    }
-
-    if (author !== undefined) {
-      if (typeof author !== 'string' || !author.trim()) {
-        return NextResponse.json(
-          { error: 'Author must be a non-empty string.' },
-          { status: 400 }
-        );
-      }
-      books[id].author = author.trim();
-    }
-
-    if (file_link !== undefined) {
-      if (typeof file_link !== 'string' || !file_link.trim()) {
-        return NextResponse.json(
-          { error: 'File link must be a non-empty string.' },
-          { status: 400 }
-        );
-      }
-      books[id].file_link = file_link.trim();
-    }
-
-    await writeBooks(books);
-    return NextResponse.json({ book: { id, ...books[id] } }, { status: 200 });
-  } catch (error) {
-    console.error('books-admin PUT error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
-  }
-}
-
 export async function DELETE(request: NextRequest) {
   try {
     const url = new URL(request.url);
-    const idParam = url.searchParams.get('id');
+    const id = url.searchParams.get('id');
     
-    if (idParam === null) {
-      return NextResponse.json(
-        { error: 'Book ID is required.' },
-        { status: 400 }
-      );
+    if (!id) {
+      return NextResponse.json({ error: 'Book ID is required.' }, { status: 400 });
     }
 
-    const id = parseInt(idParam, 10);
+    await dbDeleteBook(id);
     
-    if (isNaN(id) || id < 0) {
-      return NextResponse.json(
-        { error: 'Valid book ID is required.' },
-        { status: 400 }
-      );
-    }
-
-    const books = await readBooks();
-    
-    if (id >= books.length) {
-      return NextResponse.json(
-        { error: 'Book not found.' },
-        { status: 404 }
-      );
-    }
-
-    const deletedBook = books[id];
-    books.splice(id, 1);
-    
-    await writeBooks(books);
-    return NextResponse.json({ 
-      message: 'Book deleted successfully',
-      deletedBook: { id, ...deletedBook }
-    }, { status: 200 });
+    return NextResponse.json({ message: 'Book deleted successfully' }, { status: 200 });
   } catch (error) {
     console.error('books-admin DELETE error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

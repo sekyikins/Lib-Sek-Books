@@ -5,40 +5,124 @@ import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Role } from '@/types/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FiPlus, FiUpload, FiCheck, FiAlertCircle, FiLink } from 'react-icons/fi';
+import { FiPlus, FiUpload, FiCheck, FiAlertCircle, FiLink, FiX } from 'react-icons/fi';
 
 interface BookData {
   title: string;
   author: string;
   file: File | null;
-  file_link?: string;
-  inputMode?: 'file' | 'link';
+  coverFile: File | null;
+  isbn?: string;
+  description?: string;
+  published_date?: string;
+  language?: string;
+  genre?: string;
 }
 
 interface LinkBookData {
   title: string;
   author: string;
-  file_link: string;
-  file?: File | null;
+  file: File | null;
+  coverFile: File | null;
+  isbn?: string;
+  description?: string;
+  published_date?: string;
+  language?: string;
+  genre?: string;
 }
 
 type InputMode = 'link' | 'file';
+
+interface TagInputProps {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  required?: boolean;
+}
+
+function TagInput({ label, value, onChange, placeholder, required }: TagInputProps) {
+  const [inputValue, setInputValue] = useState('');
+  const tags = value.split(',').map(t => t.trim()).filter(t => t !== '');
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === ',' || e.key === 'Enter') {
+      e.preventDefault();
+      addTag();
+    } else if (e.key === 'Backspace' && !inputValue && tags.length > 0) {
+      removeTag(tags.length - 1);
+    }
+  };
+
+  const addTag = () => {
+    const values = inputValue.split(',').map(v => v.trim()).filter(v => v !== '');
+    if (values.length > 0) {
+      const newUniqueTags = values.filter(v => !tags.includes(v));
+      if (newUniqueTags.length > 0) {
+        const newTags = [...tags, ...newUniqueTags];
+        onChange(newTags.join(', '));
+      }
+      setInputValue('');
+    }
+  };
+
+  const removeTag = (index: number) => {
+    const newTags = tags.filter((_, i) => i !== index);
+    onChange(newTags.join(', '));
+  };
+
+  return (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label} {required && '*'}
+      </label>
+      <div className="flex flex-wrap gap-2 p-1.5 bg-white border border-gray-300 rounded-md shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 min-h-[38px]">
+        {tags.map((tag, i) => (
+          <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-700">
+            {tag}
+            <button
+              type="button"
+              onClick={() => removeTag(i)}
+              className="ml-1 inline-flex items-center p-0.5 rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:outline-none"
+            >
+              <FiX className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+        <input
+          type="text"
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+          onBlur={addTag}
+          className="flex-1 min-w-[120px] outline-none text-sm"
+          placeholder={tags.length === 0 ? placeholder : ""}
+          required={required && tags.length === 0}
+        />
+      </div>
+    </div>
+  );
+}
 
 function AddBooksContent() {
   const { isLoading } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [books, setBooks] = useState<BookData[]>([
-    { title: '', author: '', file: null, file_link: '', inputMode: 'file' }
+    { title: '', author: '', file: null, coverFile: null, isbn: '', description: '', published_date: '', language: 'English', genre: '' }
   ]);
   const [linkBook, setLinkBook] = useState<LinkBookData>({
     title: '',
     author: '',
-    file_link: '',
-    file: null
+    file: null,
+    coverFile: null,
+    isbn: '',
+    description: '',
+    published_date: '',
+    language: 'English',
+    genre: ''
   });
-  const [inputMode, setInputMode] = useState<InputMode>('link');
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [linkError, setLinkError] = useState('');
@@ -51,20 +135,24 @@ function AddBooksContent() {
     const author = searchParams.get('author');
     const link = searchParams.get('link');
     
-    if (editId && title && author && link) {
+    if (editId && title && author) {
       setLinkBook({
         title: decodeURIComponent(title),
         author: decodeURIComponent(author),
-        file_link: decodeURIComponent(link),
-        file: null
+        file: null,
+        coverFile: null,
+        isbn: searchParams.get('isbn') || '',
+        description: searchParams.get('description') || '',
+        published_date: searchParams.get('published_date') || '',
+        language: searchParams.get('language') || 'English',
+        genre: searchParams.get('genre') || ''
       });
-      setEditingId(parseInt(editId));
-      setInputMode('link');
+      setEditingId(editId);
     }
   }, [searchParams]);
 
   const addNewBook = () => {
-    setBooks([...books, { title: '', author: '', file: null, file_link: '', inputMode: 'file' }]);
+    setBooks([...books, { title: '', author: '', file: null, coverFile: null }]);
     setErrors([...errors, '']);
   };
 
@@ -77,7 +165,7 @@ function AddBooksContent() {
 
   const clearBook = (index: number) => {
     const newBooks = [...books];
-    newBooks[index] = { title: '', author: '', file: null, file_link: '', inputMode: 'file' };
+    newBooks[index] = { title: '', author: '', file: null, coverFile: null };
     setBooks(newBooks);
     
     // Clear error for this book
@@ -102,21 +190,18 @@ function AddBooksContent() {
       if (!book.title.trim()) return 'Title is required';
       if (!book.author.trim()) return 'Author is required';
       
-      if (book.inputMode === 'file') {
-        if (!book.file) return 'File is required';
-        if (book.file && !book.file.name.match(/\.(pdf|epub|doc|docx|txt)$/i)) {
-          return 'Invalid file type. Only PDF, EPUB, DOC, DOCX, and TXT files are allowed';
-        }
-        if (book.file && book.file.size > 50 * 1024 * 1024) { // 50MB limit
-          return 'File size must be less than 50MB';
-        }
-      } else {
-        if (!book.file_link?.trim()) return 'File link is required';
-        if (book.file_link && !book.file_link.match(/^https?:\/\/.+/)) {
-          return 'Please enter a valid URL';
-        }
+      if (!book.file) return 'Book file is required';
+      if (book.file && !book.file.name.match(/\.(pdf|epub|doc|docx|txt)$/i)) {
+        return 'Invalid book file type. Only PDF, EPUB, DOC, DOCX, and TXT files are allowed';
       }
-      
+      if (book.file && book.file.size > 50 * 1024 * 1024) { // 50MB limit
+        return 'Book file size must be less than 50MB';
+      }
+
+      if (book.coverFile && !book.coverFile.type.startsWith('image/')) {
+        return 'Invalid cover image type. Please upload an image file.';
+      }
+
       return '';
     });
     
@@ -134,28 +219,22 @@ function AddBooksContent() {
       return false;
     }
     
-    if (inputMode === 'link') {
-      if (!linkBook.file_link.trim()) {
-        setLinkError('File link is required');
-        return false;
-      }
-      if (!linkBook.file_link.match(/^https?:\/\/.+/)) {
-        setLinkError('Please enter a valid URL');
-        return false;
-      }
-    } else {
-      if (!linkBook.file) {
-        setLinkError('File is required');
-        return false;
-      }
-      if (!linkBook.file.name.match(/\.(pdf|epub|doc|docx|txt)$/i)) {
-        setLinkError('Invalid file type. Only PDF, EPUB, DOC, DOCX, and TXT files are allowed');
-        return false;
-      }
-      if (linkBook.file.size > 50 * 1024 * 1024) { // 50MB limit
-        setLinkError('File size must be less than 50MB');
-        return false;
-      }
+    if (!linkBook.file && !editingId) {
+      setLinkError('Book file is required');
+      return false;
+    }
+    if (linkBook.file && !linkBook.file.name.match(/\.(pdf|epub|doc|docx|txt)$/i)) {
+      setLinkError('Invalid book file type. Only PDF, EPUB, DOC, DOCX, and TXT files are allowed');
+      return false;
+    }
+    if (linkBook.file && linkBook.file.size > 50 * 1024 * 1024) { // 50MB limit
+      setLinkError('Book file size must be less than 50MB');
+      return false;
+    }
+    
+    if (linkBook.coverFile && !linkBook.coverFile.type.startsWith('image/')) {
+      setLinkError('Invalid cover image type. Please upload an image file.');
+      return false;
     }
     
     setLinkError('');
@@ -190,35 +269,31 @@ function AddBooksContent() {
     setSuccessMessage('');
 
     try {
-      let fileLink = linkBook.file_link.trim();
-      let previousFileLink = '';
+      let fileUrl = '';
+      let coverUrl = '';
       
-      // For editing, get the previous file link for cleanup
-      if (editingId) {
-        const booksResponse = await fetch('/api/books-admin');
-        if (booksResponse.ok) {
-          const booksData = await booksResponse.json();
-          const book = booksData.books?.find((b: { id: number; file_link: string }) => b.id === editingId);
-          previousFileLink = book?.file_link || '';
-        }
+      // Handle book file upload
+      if (linkBook.file) {
+        fileUrl = await uploadToSupabaseStorage(linkBook.file, 'Books');
       }
       
-      // Handle file upload mode
-      if (inputMode === 'file' && linkBook.file) {
-        fileLink = await uploadToGoogleDrive(linkBook.file);
-      } else if (inputMode === 'link' && editingId) {
-        // Check if link exists when updating
-        const linkExists = await checkFileExists(fileLink);
-        if (!linkExists) {
-          throw new Error('The provided file link does not exist or is not accessible');
-        }
+      // Handle cover image upload
+      if (linkBook.coverFile) {
+        coverUrl = await uploadToSupabaseStorage(linkBook.coverFile, 'Cover Image');
       }
 
-      const bookData = {
+      const bookData: any = {
         title: linkBook.title.trim(),
         author: linkBook.author.trim(),
-        file_link: fileLink
+        isbn: linkBook.isbn?.trim(),
+        description: linkBook.description?.trim(),
+        published_date: linkBook.published_date?.trim(),
+        language: linkBook.language?.trim(),
+        genre: linkBook.genre?.trim()
       };
+      
+      if (fileUrl) bookData.file_link = fileUrl;
+      if (coverUrl) bookData.cover_link = coverUrl;
 
       let response;
       if (editingId) {
@@ -251,21 +326,13 @@ function AddBooksContent() {
         throw new Error(errorData.error || 'Failed to save book');
       }
       
-      // Clean up previous file if update was successful and file/link changed
-      if (editingId && previousFileLink && previousFileLink !== fileLink) {
-        try {
-          await deleteFromStorage(previousFileLink);
-        } catch (error) {
-          console.warn('Failed to delete previous file:', error);
-        }
-      }
+      // Successfully saved
 
       setSuccessMessage(`Book ${editingId ? 'updated' : 'added'} successfully!`);
       
       // Reset form after successful submission
       setTimeout(() => {
-        setLinkBook({ title: '', author: '', file_link: '', file: null });
-        setInputMode('link');
+        setLinkBook({ title: '', author: '', file: null, coverFile: null });
         setEditingId(null);
         setSuccessMessage('');
         // Clear URL parameters
@@ -280,33 +347,23 @@ function AddBooksContent() {
     }
   };
 
-  const uploadToGoogleDrive = async (file: File): Promise<string> => {
-    // This is a placeholder for Google Drive upload
-    // In a real implementation, you would use Google Drive API
-    // For now, we'll simulate the upload and return a mock link
-    
+  const uploadToSupabaseStorage = async (file: File, bucket: string = 'Books'): Promise<string> => {
     const formData = new FormData();
     formData.append('file', file);
-    formData.append('name', file.name);
+    formData.append('bucket', bucket);
     
-    try {
-      const response = await fetch('/api/upload-to-drive', {
-        method: 'POST',
-        body: formData,
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Upload failed');
-      }
-      
-      const result = await response.json();
-      return result.fileUrl;
-    } catch (error) {
-      // Fallback to mock URL for demo
-      console.warn('Google Drive upload not implemented, using mock URL:', error);
-      return `https://drive.google.com/file/d/mock_${Date.now()}/view?usp=sharing`;
+    const response = await fetch('/api/upload-to-storage', {
+      method: 'POST',
+      body: formData,
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Upload failed');
     }
+    
+    const result = await response.json();
+    return result.fileUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -325,32 +382,31 @@ function AddBooksContent() {
       
       for (let i = 0; i < books.length; i++) {
         const book = books[i];
-        if (book.title && book.author) {
-          let fileUrl = '';
+        if (book.title && book.author && book.file) {
+          // 1. Upload Book File
+          const fileUrl = await uploadToSupabaseStorage(book.file, 'Books');
           
-          if (book.inputMode === 'file' && book.file) {
-            // Upload file to Google Drive
-            fileUrl = await uploadToGoogleDrive(book.file);
-          } else if (book.inputMode === 'link' && book.file_link) {
-            // Check if link exists
-            const linkExists = await checkFileExists(book.file_link);
-            if (!linkExists) {
-              throw new Error(`File link for book "${book.title}" does not exist or is not accessible`);
-            }
-            fileUrl = book.file_link;
+          // 2. Upload Cover Image (if provided)
+          let coverUrl = '';
+          if (book.coverFile) {
+            coverUrl = await uploadToSupabaseStorage(book.coverFile, 'Cover Image');
           }
           
-          if (fileUrl) {
-            booksToAdd.push({
-              title: book.title.trim(),
-              author: book.author.trim(),
-              file_link: fileUrl,
-            });
-          }
+          booksToAdd.push({
+            title: book.title.trim(),
+            author: book.author.trim(),
+            file_link: fileUrl,
+            cover_link: coverUrl || null,
+            isbn: book.isbn?.trim(),
+            description: book.description?.trim(),
+            published_date: book.published_date?.trim(),
+            language: book.language?.trim(),
+            genre: book.genre?.trim()
+          });
         }
       }
 
-      // Save to books.json
+      // Save to database via API
       const saveResponse = await fetch('/api/books-admin', {
         method: 'POST',
         headers: {
@@ -370,7 +426,7 @@ function AddBooksContent() {
       
       // Reset form after successful submission
       setTimeout(() => {
-        setBooks([{ title: '', author: '', file: null, file_link: '', inputMode: 'file' }]);
+        setBooks([{ title: '', author: '', file: null, coverFile: null }]);
         setSuccessMessage('');
       }, 3000);
 
@@ -386,7 +442,7 @@ function AddBooksContent() {
     return (
       <div className="min-h-screen flex flex-col gap-5 items-center justify-center">
         <div className="text-lg text-blue-600">Loading...</div>
-        <div className="border-b-3 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+        <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
       </div>
     );
   }
@@ -440,44 +496,14 @@ function AddBooksContent() {
                     Edit Book
                   </h2>
                   
-                  {/* Input Mode Toggle */}
-                  <div className="mb-6">
-                    <div className="flex items-center space-x-4">
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="inputMode"
-                          value="link"
-                          checked={inputMode === 'link'}
-                          onChange={(e) => {
-                            setInputMode(e.target.value as InputMode);
-                            setLinkBook({ ...linkBook, file: null });
-                            setLinkError('');
-                          }}
-                          className="mr-2"
-                        />
-                        <span className="text-sm font-medium text-gray-700">Use Link</span>
-                      </label>
-                      <label className="flex items-center">
-                        <input
-                          type="radio"
-                          name="inputMode"
-                          value="file"
-                          checked={inputMode === 'file'}
-                          onChange={(e) => {
-                            setInputMode(e.target.value as InputMode);
-                            setLinkBook({ ...linkBook, file_link: '' });
-                            setLinkError('');
-                          }}
-                          className="mr-2"
-                        />
-                        <span className="text-sm font-medium text-gray-700">Upload File</span>
-                      </label>
-                    </div>
+                  <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
+                    <p className="text-sm text-indigo-700">
+                      <strong>Note:</strong> External URL links are no longer supported. All books must be uploaded directly.
+                    </p>
                   </div>
                   
                   <form onSubmit={handleLinkSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Title *
@@ -491,40 +517,76 @@ function AddBooksContent() {
                           required
                         />
                       </div>
+                      <TagInput
+                        label="Author(s)"
+                        value={linkBook.author}
+                        onChange={(val) => setLinkBook({ ...linkBook, author: val })}
+                        placeholder="e.g. Frank Wood"
+                        required
+                      />
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Author *
+                          ISBN
                         </label>
                         <input
                           type="text"
-                          value={linkBook.author}
-                          onChange={(e) => setLinkBook({ ...linkBook, author: e.target.value })}
+                          value={linkBook.isbn}
+                          onChange={(e) => setLinkBook({ ...linkBook, isbn: e.target.value })}
                           className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="Enter author name"
-                          required
+                          placeholder="Enter ISBN"
+                        />
+                      </div>
+                      <TagInput
+                        label="Genre(s)"
+                        value={linkBook.genre || ''}
+                        onChange={(val) => setLinkBook({ ...linkBook, genre: val })}
+                        placeholder="e.g. Programming"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Published Date
+                        </label>
+                        <input
+                          type="text"
+                          value={linkBook.published_date}
+                          onChange={(e) => setLinkBook({ ...linkBook, published_date: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          placeholder="e.g. 2023-01-01"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Language
+                        </label>
+                        <input
+                          type="text"
+                          value={linkBook.language}
+                          onChange={(e) => setLinkBook({ ...linkBook, language: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          placeholder="Enter language"
                         />
                       </div>
                     </div>
-                    {inputMode === 'link' && (
+
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        value={linkBook.description}
+                        onChange={(e) => setLinkBook({ ...linkBook, description: e.target.value })}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        placeholder="Enter book description"
+                        rows={3}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
                       <div className="transition-all duration-300 ease-in-out">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          File Link *
-                        </label>
-                        <input
-                          type="url"
-                          value={linkBook.file_link}
-                          onChange={(e) => setLinkBook({ ...linkBook, file_link: e.target.value })}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="https://drive.google.com/file/d/FILE_ID/view?usp=sharing"
-                          required
-                        />
-                      </div>
-                    )}
-                    
-                    {inputMode === 'file' && (
-                      <div className="transition-all duration-300 ease-in-out">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Upload File *
+                          Book File *
                         </label>
                         <div className="flex items-center space-x-4">
                           <label className="flex-1">
@@ -536,14 +598,13 @@ function AddBooksContent() {
                                 setLinkBook({ ...linkBook, file });
                               }}
                               className="hidden"
-                              required
                             />
-                            <div className="border-2 shadow-sm border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-500 transition-colors">
+                            <div className="border-2 shadow-sm border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-white">
                               {linkBook.file ? (
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center">
                                     <FiUpload className="w-5 h-5 text-indigo-600 mr-2" />
-                                    <span className="text-sm text-gray-700">{linkBook.file.name}</span>
+                                    <span className="text-sm text-gray-700 truncate max-w-[150px]">{linkBook.file.name}</span>
                                     <span className="text-xs text-gray-500 ml-2">
                                       ({(linkBook.file.size / 1024 / 1024).toFixed(2)} MB)
                                     </span>
@@ -551,18 +612,49 @@ function AddBooksContent() {
                                 </div>
                               ) : (
                                 <div className="flex flex-col items-center">
-                                  <FiUpload className="w-8 h-8 text-gray-400 mb-2" />
-                                  <span className="text-sm text-gray-600">Click to upload or drag and drop</span>
-                                  <span className="text-xs text-gray-500 mt-1">
-                                    PDF, EPUB, DOC, DOCX, TXT (Max 50MB)
-                                  </span>
+                                  <FiUpload className="w-6 h-6 text-gray-400 mb-1" />
+                                  <span className="text-xs text-gray-600 font-medium">Click to upload Book</span>
                                 </div>
                               )}
                             </div>
                           </label>
                         </div>
                       </div>
-                    )}
+
+                      <div className="transition-all duration-300 ease-in-out">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Cover Image
+                        </label>
+                        <div className="flex items-center space-x-4">
+                          <label className="flex-1">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0] || null;
+                                setLinkBook({ ...linkBook, coverFile: file });
+                              }}
+                              className="hidden"
+                            />
+                            <div className="border-2 shadow-sm border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-white">
+                              {linkBook.coverFile ? (
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center">
+                                    <FiPlus className="w-5 h-5 text-green-600 mr-2" />
+                                    <span className="text-sm text-gray-700 truncate max-w-[150px]">{linkBook.coverFile.name}</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center">
+                                  <FiPlus className="w-6 h-6 text-gray-400 mb-1" />
+                                  <span className="text-xs text-gray-600 font-medium">Click to upload Cover</span>
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
                     <div className="flex space-x-4">
                       <button
                         title='Add Book To List'
@@ -586,8 +678,7 @@ function AddBooksContent() {
                         title='Hide Link Form'
                         type="button"
                         onClick={() => {
-                          setLinkBook({ title: '', author: '', file_link: '', file: null });
-                          setInputMode('link');
+                          setLinkBook({ title: '', author: '', file: null, coverFile: null });
                           setEditingId(null);
                           setLinkError('');
                           router.replace('/add-books');
@@ -632,7 +723,7 @@ function AddBooksContent() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Title *
@@ -646,64 +737,74 @@ function AddBooksContent() {
                           required
                         />
                       </div>
+                      <TagInput
+                        label="Author(s)"
+                        value={book.author}
+                        onChange={(val) => updateBook(index, 'author', val)}
+                        placeholder="e.g. Frank Wood"
+                        required
+                      />
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Author *
+                          ISBN
                         </label>
                         <input
                           type="text"
-                          value={book.author}
-                          onChange={(e) => updateBook(index, 'author', e.target.value)}
+                          value={book.isbn}
+                          onChange={(e) => updateBook(index, 'isbn', e.target.value)}
                           className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="Enter author name"
-                          required
+                          placeholder="Enter ISBN"
+                        />
+                      </div>
+                      <TagInput
+                        label="Genre(s)"
+                        value={book.genre || ''}
+                        onChange={(val) => updateBook(index, 'genre', val)}
+                        placeholder="e.g. Programming"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Published Date
+                        </label>
+                        <input
+                          type="text"
+                          value={book.published_date}
+                          onChange={(e) => updateBook(index, 'published_date', e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          placeholder="e.g. 2023-01-01"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          Language
+                        </label>
+                        <input
+                          type="text"
+                          value={book.language}
+                          onChange={(e) => updateBook(index, 'language', e.target.value)}
+                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                          placeholder="Enter language"
                         />
                       </div>
                     </div>
-                    
-                    {/* Input Mode Toggle for Multiple Books */}
-                    <div className="mb-4">
-                      <div className="flex items-center space-x-4">
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            name={`inputMode-${index}`}
-                            value="file"
-                            checked={book.inputMode === 'file'}
-                            onChange={() => {
-                              const newBooks = [...books];
-                              newBooks[index] = { ...newBooks[index], inputMode: 'file', file_link: '' };
-                              setBooks(newBooks);
-                              const newErrors = [...errors];
-                              newErrors[index] = '';
-                              setErrors(newErrors);
-                            }}
-                            className="mr-2"
-                          />
-                          <span className="text-sm font-medium text-gray-700">Upload File</span>
-                        </label>
-                        <label className="flex items-center">
-                          <input
-                            type="radio"
-                            name={`inputMode-${index}`}
-                            value="link"
-                            checked={book.inputMode === 'link'}
-                            onChange={() => {
-                              const newBooks = [...books];
-                              newBooks[index] = { ...newBooks[index], inputMode: 'link', file: null };
-                              setBooks(newBooks);
-                              const newErrors = [...errors];
-                              newErrors[index] = '';
-                              setErrors(newErrors);
-                            }}
-                            className="mr-2"
-                          />
-                          <span className="text-sm font-medium text-gray-700">Use Link</span>
-                        </label>
-                      </div>
-                    </div>
 
-                    {book.inputMode === 'file' ? (
+                    <div className="mb-4">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Description
+                      </label>
+                      <textarea
+                        value={book.description}
+                        onChange={(e) => updateBook(index, 'description', e.target.value)}
+                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        placeholder="Enter book description"
+                        rows={2}
+                      />
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div className="transition-all duration-300 ease-in-out">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           Book File *
@@ -718,24 +819,23 @@ function AddBooksContent() {
                                 updateBook(index, 'file', file);
                               }}
                               className="hidden"
-                              required
                             />
-                            <div className="border-2 shadow-sm border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-500 transition-colors">
+                            <div className="border-2 shadow-sm border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-gray-50">
                               {book.file ? (
                                 <div className="flex items-center justify-between">
                                   <div className="flex items-center">
-                                    <FiUpload className="w-5 h-5 text-indigo-600 mr-2" />
-                                    <span className="text-sm text-gray-700">{book.file.name}</span>
-                                    <span className="text-xs text-gray-500 ml-2">
+                                    <FiUpload className="w-6 h-6 text-indigo-600 mr-3" />
+                                    <span className="text-sm font-medium text-gray-800 truncate max-w-[200px]">{book.file.name}</span>
+                                    <span className="text-xs text-gray-500 ml-3">
                                       ({(book.file.size / 1024 / 1024).toFixed(2)} MB)
                                     </span>
                                   </div>
                                 </div>
                               ) : (
                                 <div className="flex flex-col items-center">
-                                  <FiUpload className="w-8 h-8 text-gray-400 mb-2" />
-                                  <span className="text-sm text-gray-600">Click to upload or drag and drop</span>
-                                  <span className="text-xs text-gray-500 mt-1">
+                                  <FiUpload className="w-10 h-10 text-gray-400 mb-3" />
+                                  <span className="text-sm text-gray-600 font-semibold">Click to upload Book File</span>
+                                  <span className="text-xs text-gray-500 mt-2">
                                     PDF, EPUB, DOC, DOCX, TXT (Max 50MB)
                                   </span>
                                 </div>
@@ -744,25 +844,44 @@ function AddBooksContent() {
                           </label>
                         </div>
                       </div>
-                    ) : (
+
                       <div className="transition-all duration-300 ease-in-out">
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          File Link *
+                          Cover Image
                         </label>
-                        <input
-                          type="url"
-                          value={book.file_link || ''}
-                          onChange={(e) => {
-                            const newBooks = [...books];
-                            newBooks[index] = { ...newBooks[index], file_link: e.target.value };
-                            setBooks(newBooks);
-                          }}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="https://drive.google.com/file/d/FILE_ID/view?usp=sharing"
-                          required
-                        />
+                        <div className="flex items-center space-x-4">
+                          <label className="flex-1">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={(e) => {
+                                const file = e.target.files?.[0] || null;
+                                updateBook(index, 'coverFile', file);
+                              }}
+                              className="hidden"
+                            />
+                            <div className="border-2 shadow-sm border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-gray-50">
+                              {book.coverFile ? (
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center">
+                                    <FiPlus className="w-6 h-6 text-green-600 mr-3" />
+                                    <span className="text-sm font-medium text-gray-800 truncate max-w-[200px]">{book.coverFile.name}</span>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col items-center">
+                                  <FiPlus className="w-10 h-10 text-gray-400 mb-3" />
+                                  <span className="text-sm text-gray-600 font-semibold">Click to upload Cover Image</span>
+                                  <span className="text-xs text-gray-500 mt-2">
+                                    JPG, PNG, WEBP, etc.
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          </label>
+                        </div>
                       </div>
-                    )}
+                    </div>
 
                     {errors[index] && (
                       <div className="mt-2 text-sm text-red-600">
@@ -777,7 +896,7 @@ function AddBooksContent() {
                       title='Clear All Books'
                       type="button"
                       onClick={() => {
-                        setBooks([{ title: '', author: '', file: null, file_link: '', inputMode: 'file' }]);
+                        setBooks([{ title: '', author: '', file: null, coverFile: null }]);
                         setErrors([]);
                         setSuccessMessage('');
                       }}

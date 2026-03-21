@@ -3,6 +3,8 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
 
+import { signOut } from 'next-auth/react';
+
 export default function Dashboard() {
   const { user, userRole, isAdmin, isUser, hasRolePermission, isAuthenticated, isLoading } = useAuth();
   const router = useRouter();
@@ -12,7 +14,7 @@ export default function Dashboard() {
     return (
       <div className="min-h-screen flex flex-col gap-5 items-center justify-center">
         <div className="text-lg text-blue-600">Loading...</div>
-        <div className="border-b-3 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+        <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
       </div>
     );
   }
@@ -61,7 +63,7 @@ export default function Dashboard() {
                 <button
                   title="View Borrow History"
                   onClick={() => router.push('/borrow-history')}
-                  className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-blue-600 text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-green-600"
+                  className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-blue-600 text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
                 >
                   📖 Borrow History
                 </button>
@@ -145,7 +147,7 @@ export default function Dashboard() {
               {isAuthenticated ? (
                 <button
                   title='Sign Out'
-                  onClick={() => router.push('/api/auth/signout')}
+                  onClick={() => signOut({ callbackUrl: '/auth/signin' })}
                   className="inline-flex items-center px-4 py-2 border border-gray-500 text-sm shadow-lg font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                 >
                   Sign Out

@@ -137,7 +137,7 @@ export default function LibraryPage() {
       setCurrentPage(0);
       setCurrentSearchQuery(query);
       fetchBooks(query, 0);
-    }, 1500);
+    }, 500);
   }, [fetchBooks]);
 
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -203,7 +203,7 @@ export default function LibraryPage() {
     return (
       <div className="min-h-screen flex flex-col gap-5 items-center justify-center">
         <div className="text-lg text-blue-600">Loading...</div>
-        <div className="border-b-3 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+        <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
       </div>
     );
   }
@@ -260,7 +260,7 @@ export default function LibraryPage() {
           {loading ? (
             <div className="flex flex-col gap-2 justify-center items-center h-64">
               <div className="text-lg text-blue-600">Loading books...</div>
-              <div className="border-b-3 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+              <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -270,7 +270,7 @@ export default function LibraryPage() {
                   className="bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-lg hover:scale-105 transition-all duration-300 cursor-pointer"
                   onClick={() => {
                     const bookData = encodeURIComponent(JSON.stringify(book));
-                    window.location.href = `/book/${book.id}?book=${bookData}`;
+                    router.push(`/book/${book.id}?book=${bookData}`);
                   }}
                   title='View book details'
                 >

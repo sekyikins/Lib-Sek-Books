@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 export default function SignIn() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [error, setError] = useState('');
@@ -29,7 +30,7 @@ export default function SignIn() {
     return (
       <div className="min-h-screen flex flex-col gap-5 items-center justify-center">
         <div className="text-lg text-blue-600">Loading...</div>
-        <div className="border-b-3 border-blue-500 rounded-full w-12 h-12 animate-spin"></div>
+        <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
       </div>
     );
   }
@@ -41,8 +42,14 @@ export default function SignIn() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+
+    if (isRegisterMode && password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       if (isRegisterMode) {
@@ -104,6 +111,7 @@ export default function SignIn() {
     setError('');
     setEmail('');
     setPassword('');
+    setConfirmPassword('');
     setFirstName('');
     setLastName('');
   };
@@ -196,15 +204,15 @@ export default function SignIn() {
               {isRegisterMode && (
                 <>
                   <input
-                id="password"
-                name="password"
+                id="confirmPassword"
+                name="confirmPassword"
                 type="password"
                 required
                 className="appearance-none relative block w-full px-3 py-2 bg-white border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10 sm:text-sm"
                 placeholder="Confirm Password"
-                value={password}
+                value={confirmPassword}
                 onChange={(e) => {
-                  setPassword(e.target.value);
+                  setConfirmPassword(e.target.value);
                   setError('');
                 }}
               />

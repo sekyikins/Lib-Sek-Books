@@ -1,7 +1,7 @@
-// In-memory data store for Vercel deployment
-// This replaces the file-based storage that doesn't work on serverless functions
+import { getBooks, createBook, deleteBook } from '@/lib/db';
 
 export type BookEntry = {
+  id?: string;
   title: string;
   author: string;
   file_link: string;
@@ -18,170 +18,38 @@ export type RequestEntry = {
   status: 'available' | 'not_found' | 'delivery_failed' | 'delivered';
 };
 
-// Initial books data from the original books.json
-const INITIAL_BOOKS: BookEntry[] = [
-  {
-    "title": "The Art of Laziness",
-    "author": "Library Mindset",
-    "file_link": "https://drive.google.com/file/d/14r8KHVloXCBjJ4p8eSPS2YDv_XvuaHiM/view?usp=sharing",
-    "added_at": "2026-02-17T03:51:40.032Z"
-  },
-  {
-    "title": "Atomic Habits",
-    "author": "James Clear",
-    "file_link": "https://drive.google.com/file/d/1J94nRSsjKtsn54Ak5wpw8OuMF-2M0W0v/view?usp=drive_link"
-  },
-  {
-    "title": "Rich Dad Poor Dad",
-    "author": "Robert T. Kiyosaki",
-    "file_link": "https://drive.google.com/file/d/1yBqg32INrm8IwXanQ0GhG6WpvrtFOKKc/view?usp=drive_link"
-  },
-  {
-    "title": "Prisoner of Geography",
-    "author": "Tim Marshall",
-    "file_link": "https://drive.google.com/file/d/1PNAZSsDEzBnS9-mE9ggOs2e4fPGkuQ0v/view?usp=drive_link",
-    "added_at": "2026-02-17T03:53:57.151Z"
-  },
-  {
-    "title": "The Millionaire Next Door",
-    "author": "Thomas J. Stanley",
-    "file_link": "https://drive.google.com/file/d/1oV6kI20Po2lLHZvoIuL67hapjoUoeycX/view?usp=sharing",
-    "added_at": "2026-02-17T17:22:14.873Z"
-  },
-  {
-    "title": "Operations Research Theory And Application: 6th Edition",
-    "author": "J. K. Sharma",
-    "file_link": "https://drive.google.com/file/d/1cDa-hES7QkpfMVtNI7klpk69Rp6jdjn3/view?usp=sharing",
-    "added_at": "2026-02-18T02:17:26.991Z"
-  },
-  {
-    "title": "Frank Wood's Business Accounting: 105h Edition",
-    "author": "Frank Wood & Alan Sangster",
-    "file_link": "https://drive.google.com/file/d/1vy7CodKmVq4gwSYTQm8KxlqREsrlnu3T/view?usp=sharing",
-    "added_at": "2026-02-18T02:20:46.414Z"
-  },
-  {
-    "title": "Transcending Imagination - Artificial Intelligence and the Future",
-    "author": "Alexander Manu",
-    "file_link": "https://drive.google.com/file/d/1STGc6IxdNuV8qA-vuorwZH6Lie2_Gyh0/view?usp=sharing",
-    "added_at": "2026-02-19T02:43:27.417Z"
-  },
-  {
-    "title": "Think Python - 3rd Edition",
-    "author": "Andy Forson",
-    "file_link": "https://drive.google.com/file/d/1azwk_VJEZfVZS1ZklbsY76e3Odmc_VQL/view?usp=sharing",
-    "added_at": "2026-02-19T03:30:00.105Z"
-  },
-  {
-    "title": "Introduction to HTML and CSS",
-    "author": "RoseMary",
-    "file_link": "https://drive.google.com/file/d/1XUked2KBzhqwndEH3g--T-ftKaEkQLHS/view?usp=sharing",
-    "added_at": "2026-02-19T04:06:52.279Z"
-  },
-  {
-    "title": "introduction to html and css",
-    "author": "me",
-    "file_link": "https://drive.google.com/file/d/16d4T4amHLPEilCzrZo7GaRNiiA4fAvyn/view?usp=sharing",
-    "added_at": "2026-02-19T04:32:16.546Z"
-  },
-  {
-    "title": "Fundamentals of Data Science",
-    "author": "Sanjeev J. Wagh, Manisha S. Bhende, and Anuradha D. Thakare",
-    "file_link": "https://drive.google.com/file/d/1GzTwwRd1GoKCDpGtxg5DNG7EAEpPZUi2/view?usp=sharing",
-    "added_at": "2026-02-19T04:38:56.948Z"
-  },
-  {
-    "title": "Large Language Models Projects Apply and Implement Strategies for Large Language Model",
-    "author": "Pere Martra",
-    "file_link": "https://drive.google.com/file/d/1iMDd7B_lg-c0PYY7fr7jy8co3L3Dsoow/view?usp=sharing",
-    "added_at": "2026-02-19T05:00:03.516Z"
-  },
-  {
-    "title": "Quantum Machine \nLearning\nA Modern Approach",
-    "author": "S. Karthikeyan  \nM. Akila  \n D. Sumathi  \n T. Poongodi",
-    "file_link": "https://drive.google.com/file/d/1xu-XrgPL1Zdg9MfGQ5O7JWMPzQD296m4/view?usp=sharing",
-    "added_at": "2026-02-19T05:14:18.151Z"
-  },
-  {
-    "title": "Mindset _ The New Psychology of Success",
-    "author": "Carol S. Dweck, Ph.D",
-    "file_link": "https://drive.google.com/file/d/1wVv8bLrjCuJt04XN2dMnreQcJ6JGrs3v/view?usp=sharing",
-    "added_at": "2026-02-19T05:23:09.271Z"
-  },
-  {
-    "title": "Life Time Data: Statistical Models And Methods - Quality Reliability",
-    "author": "Jayant V. Deshpande & Sudha G. Purohit",
-    "file_link": "https://drive.google.com/file/d/1GYz4826n_qqQhsWbmnN90cSlMBm9thT4/view?usp=sharing",
-    "added_at": "2026-02-19T13:59:41.365Z"
-  },
-  {
-    "title": "LLM Foundation - Foundational Large Language Models & Text Generation (Google)",
-    "author": "Mohammadamin Barektain, Anant Nawalgaria, Daniel J. Mankowitz, Majd Al Merey, Yaniv Leviathan, Massimo Mascaro, Matan Kalman, Elena Buchatskaya & Aliaksei Severyn, and Antonio Gulli",
-    "file_link": "https://drive.google.com/file/d/1pM4EeqIB1_CCpm81YJlDHVLAPqPb32wM/view?usp=sharing",
-    "added_at": "2026-02-19T14:57:54.359Z"
-  },
-  {
-    "title": "The Death of the Goddess: A Poem in Twelve Cantos",
-    "author": "Patrick Colm Hogan",
-    "file_link": "https://drive.google.com/file/d/1vNB2KwGCnfn8XAwlGDLc84UZZL_KmwSl/view?usp=sharing",
-    "added_at": "2026-02-20T01:08:48.638Z"
-  },
-  {
-    "title": "Toward A Theory of Cognitive Poetics",
-    "author": "Reuven Tsur",
-    "file_link": "https://drive.google.com/file/d/1HxUVsQ4XJxEKVLpE3-pzjHgTLkU_hIrW/view?usp=sharing",
-    "added_at": "2026-02-20T01:44:48.515Z"
-  },
-  {
-    "title": "College Algebra - Third Edition",
-    "author": "Robert F. Blitzer",
-    "file_link": "https://drive.google.com/file/d/1QaFbvU3ZUh1ap_nlNB0VzvQ3kLzGgjPl/view?usp=sharing",
-    "added_at": "2026-02-20T01:54:31.703Z"
-  },
-  {
-    "title": "The Power of Your Subconscious Mind",
-    "author": "Dr. Joseph Murphy",
-    "file_link": "https://drive.google.com/file/d/1fqRJ9ISZxcw20F-oSv83ECH0ED4xg_GG/view?usp=sharing",
-    "added_at": "2026-02-20T01:57:23.524Z"
-  },
-  {
-    "title": "The Quiet Side of Wealth - Why Money Is Not the Problem — And Awareness Is The Solution",
-    "author": "Sujeet Charuasia",
-    "file_link": "https://drive.google.com/file/d/1LI8xPmCBaew3e0PqgP2YaUiiSVHaunpf/view?usp=sharing",
-    "added_at": "2026-02-20T02:00:34.695Z"
-  },
-  {
-    "title": "Artificial Intelligence of Things",
-    "author": "Thomas Newe",
-    "file_link": "https://drive.google.com/file/d/1giMiDPVR7Tp9bs5wT7IjyqhKzsg9JRQ1/view?usp=sharing",
-    "added_at": "2026-02-21T01:45:26.166Z"
-  }
-];
-
-// In-memory storage (this will persist for the duration of a single function invocation)
-let books: BookEntry[] = [...INITIAL_BOOKS];
-let requests: RequestEntry[] = [];
-
 // Books functions
 export async function readBooks(): Promise<BookEntry[]> {
-  return books;
+  const books = await getBooks();
+  return books.map(b => ({
+    id: b.id,
+    title: b.title,
+    author: b.author,
+    file_link: b.fileUrl || '',
+    cover_link: b.coverUrl || '',
+    added_at: b.createdAt ? b.createdAt.toISOString() : new Date().toISOString(),
+  }));
 }
 
 export async function writeBooks(newBooks: BookEntry[]): Promise<void> {
-  books = [...newBooks];
+  // Logic to sync entire list could be complex, for now we assume incremental adds
+  // But since the original code was 'replace everything', we'd need TRUNCATE + INSERT
+  // For safety and compatibility with current API, we just ignore this or implement as needed
+  console.warn('writeBooks is deprecated. Use createBook or updateBook directly.');
 }
 
 // Requests functions
 export async function readRequestLog(): Promise<RequestEntry[]> {
-  return requests;
+  // To be implemented with Supabase book_requests table if needed
+  return [];
 }
 
 export async function logRequest(entry: RequestEntry): Promise<void> {
-  requests.push(entry);
+  // To be implemented with Supabase book_requests table if needed
+  console.log('Logging request to console (Supabase logRequest not yet implemented):', entry);
 }
 
 // Helper function to reset data (useful for testing)
 export function resetData(): void {
-  books = [...INITIAL_BOOKS];
-  requests = [];
+  // No-op for Supabase
 }
