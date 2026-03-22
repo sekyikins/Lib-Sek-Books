@@ -4,7 +4,10 @@ import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { Book } from '@/types/books';
-import { FiArrowLeft } from 'react-icons/fi';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { FiArrowLeft, FiBook, FiUser, FiCalendar, FiGlobe, FiLayers, FiInfo, FiCheckCircle, FiXCircle, FiDownload } from 'react-icons/fi';
 
 function BookDetailsContent() {
   const searchParams = useSearchParams();
@@ -21,10 +24,10 @@ function BookDetailsContent() {
         const parsedBook = JSON.parse(decodeURIComponent(bookData));
         setBook(parsedBook);
       } else {
-        setError('Book not found');
+        setError('Book not found in archives');
       }
     } catch (err) {
-      setError('Failed to load book details');
+      setError('Failed to extract book metadata');
       console.error('Error parsing book data:', err);
     } finally {
       setLoading(false);
@@ -33,210 +36,223 @@ function BookDetailsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col gap-5 items-center justify-center">
-        <div className="text-lg text-blue-600">Loading book details...</div>
-        <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
+      <div className="min-h-screen flex flex-col gap-5 items-center justify-center bg-background">
+        <div className="text-lg font-medium text-primary animate-pulse">Consulting the Librarian...</div>
+        <div className="border-4 border-primary/20 border-t-primary rounded-full w-12 h-12 animate-spin"></div>
       </div>
     );
   }
 
   if (error || !book) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-600 text-lg mb-4">{error || 'Book not found'}</div>
-          <button
+      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+        <Card className="max-w-md w-full border-destructive/20 shadow-2xl shadow-destructive/5 text-center p-8">
+          <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto text-destructive mb-6">
+            <FiXCircle className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-foreground mb-2">Record Not Found</h2>
+          <p className="text-secondary-foreground mb-8">
+            {error || 'The requested book detail could not be retrieved from our archives.'}
+          </p>
+          <Button
+            variant="outline"
             onClick={() => router.back()}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm shadow-lg font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-300"
+            className="w-full rounded-xl"
           >
-            <FiArrowLeft className="mr-2" />
-            Back to Library
-          </button>
-        </div>
+            <FiArrowLeft className="mr-2" /> Back to Library
+          </Button>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen">
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 sm:px-0">
-          {/* Back Button */}
-          <div className="mb-6">
-            <button
-              onClick={() => router.back()}
-              className="inline-flex items-center px-4 py-2 shadow-lg border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:ring-2 focus:ring-offset-2 focus:ring-gray-300 transition-colors"
-            >
-              <FiArrowLeft className="mr-2" />
-              Back to Library
-            </button>
-          </div>
+    <DashboardLayout>
+      <div className="max-w-6xl mx-auto pt-4 pb-12">
+        {/* Back Button */}
+        <div className="mb-8">
+          <Button
+            variant="ghost"
+            onClick={() => router.back()}
+            className="rounded-xl hover:bg-muted font-bold text-secondary-foreground hover:text-foreground transition-all"
+          >
+            <FiArrowLeft className="mr-2" /> Back to Archive
+          </Button>
+        </div>
 
-          {/* Book Details Card */}
-          <div className="bg-blue-50 shadow-lg rounded-lg overflow-hidden">
-            <div className="md:flex">
-              {/* Book Cover */}
-              <div className="md:w-1/3 bg-gray-200 relative h-96 md:h-auto shadow-lg">
-                {book.coverUrl ? (
-                  <Image 
-                    src={book.coverUrl}
-                    alt={book.title}
-                    fill
-                    sizes="(max-width: 768px) 100vw, 33vw"
-                    className="object-cover"
-                    onError={(e) => {
-                      const target = e.target as HTMLImageElement;
-                      target.style.display = 'none';
-                      target.nextElementSibling?.classList.remove('hidden');
-                    }}
-                  />
-                ) : null}
-                <div className="w-full h-full flex items-center justify-center text-gray-400">
-                  <div className="text-center">
-                    <span className="text-6xl">📚</span>
-                    <p className="mt-2">No cover available</p>
-                  </div>
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+          {/* Left Column: Book Cover */}
+          <div className="lg:col-span-4 lg:sticky lg:top-24 h-fit">
+            <Card className="overflow-hidden border-none shadow-2xl shadow-black/10 aspect-[3/4.5] relative rounded-2xl group">
+              {book.coverUrl ? (
+                <Image 
+                  src={book.coverUrl}
+                  alt={book.title}
+                  fill
+                  priority
+                  sizes="(max-width: 768px) 100vw, 33vw"
+                  className="object-cover group-hover:scale-105 transition-transform duration-700"
+                  onError={(e) => {
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.nextElementSibling?.classList.remove('hidden');
+                  }}
+                />
+              ) : null}
+              <div className={`absolute inset-0 bg-muted flex items-center justify-center ${book.coverUrl ? 'hidden' : ''}`}>
+                <div className="text-center">
+                  <FiBook className="w-16 h-16 text-secondary-foreground/30 mx-auto mb-4" />
+                  <p className="text-secondary-foreground/50 font-bold uppercase tracking-widest text-xs">No Cover Image</p>
                 </div>
               </div>
-
-              {/* Book Information */}
-              <div className="md:w-2/3 p-8">
-                <div className="mb-6">
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{book.title}</h1>
-                  <p className="text-xl text-gray-600 mb-4">By {book.author}</p>
-                  
-                  {/* Metadata */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {book.language && (
-                      <span className="inline-block px-3 py-1 text-sm font-bold bg-gray-100 text-gray-700 rounded-2xl">
-                        🌐 {book.language}
-                      </span>
-                    )}
-                    {book.publishedDate && (
-                      <span className="inline-block px-3 py-1 text-sm font-medium bg-green-100 text-green-800 rounded-2xl">
-                        📅 {new Date(book.publishedDate).getFullYear()}
-                      </span>
-                    )}
-                    {book.isbn && (
-                      <span className="inline-block px-3 py-1 text-sm font-medium bg-purple-100 text-purple-800 rounded-2xl">
-                        ISBN: {book.isbn}
-                      </span>
-                    )}
-                    {book.genre && (
-                      <span className="flex gap-1 px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-2xl">
-                        📚 <span>{book.genre}</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Description */}
-                {book.description && (
-                  <div className="mb-6">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-2">Description</h2>
-                    <p className="text-gray-700 leading-relaxed">{book.description}</p>
-                  </div>
-                )}
-
-                {/* Availability */}
-                <div className="mb-6">
-                  <h2 className="text-lg font-semibold text-gray-900 mb-2">Availability</h2>
-                  <div className="text-sm text-gray-600">
-                    <p>📖 Digital Book - Unlimited Access</p>
-                    {book.totalCopies !== undefined && (
-                      <p className="mt-1">
-                        {book.available ? '✅ Available' : '❌ Currently Unavailable'}
-                        {book.totalCopies > 0 && ` (${book.totalCopies - (book.borrowedCopies || 0)}/${book.totalCopies} copies)`}
-                      </p>
-                    )}
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-4">
-                  <button
-                    onClick={() => {
-                      const params = new URLSearchParams({
-                        title: book.title,
-                        author: book.author,
-                        description: book.description || ''
-                      });
-                      router.push(`/book-request?${params.toString()}`);
-                    }}
-                    className="flex-1 py-3 px-6 rounded-md text-sm border-2 border-green-600 shadow-lg font-medium bg-green-500 text-white hover:bg-green-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                  >
-                    📥 Request This Book
-                  </button>
-                </div>
+              <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/80 to-transparent p-6 pt-20">
+                <span className="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-black tracking-tighter bg-primary text-primary-foreground mb-2">
+                  DIGITAL EDITION
+                </span>
+                <p className="text-white/60 text-xs font-medium uppercase tracking-widest leading-none">Catalog ID: {book.id?.split('-')[0] || 'N/A'}</p>
               </div>
-            </div>
+            </Card>
           </div>
 
-          {/* Additional Information */}
-          <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-blue-50 p-6 rounded-lg shadow">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Book Details</h3>
-              <dl className="space-y-2">
-                {book.id && (
-                  <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">ID:</dt>
-                    <dd className="text-sm text-gray-900">{book.id}</dd>
-                  </div>
+          {/* Right Column: Information */}
+          <div className="lg:col-span-8 flex flex-col gap-8">
+            <div className="space-y-4">
+              <h1 className="text-5xl font-extrabold tracking-tight text-foreground leading-[1.1]">
+                {book.title}
+              </h1>
+              <div className="flex items-center gap-2 group cursor-pointer w-fit">
+                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <FiUser className="w-4 h-4" />
+                </div>
+                <p className="text-xl font-bold text-secondary-foreground group-hover:text-primary transition-colors">
+                  {book.author}
+                </p>
+              </div>
+
+              {/* Metadata Badges */}
+              <div className="flex flex-wrap gap-2 pt-2">
+                {book.language && (
+                  <span className="inline-flex items-center px-3.5 py-1.5 text-xs font-bold bg-muted/50 text-foreground rounded-xl border border-border">
+                    <FiGlobe className="mr-2 h-3.5 w-3.5 text-primary" /> {book.language}
+                  </span>
                 )}
                 {book.publishedDate && (
-                  <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Published:</dt>
-                    <dd className="text-sm text-gray-900">{new Date(book.publishedDate).toLocaleDateString()}</dd>
-                  </div>
+                  <span className="inline-flex items-center px-3.5 py-1.5 text-xs font-bold bg-primary/10 text-primary rounded-xl border border-primary/20">
+                    <FiCalendar className="mr-2 h-3.5 w-3.5" /> {new Date(book.publishedDate).getFullYear()}
+                  </span>
                 )}
-                {book.language && (
-                  <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Language:</dt>
-                    <dd className="text-sm text-gray-900">{book.language}</dd>
-                  </div>
+                {book.isbn && (
+                  <span className="inline-flex items-center px-3.5 py-1.5 text-xs font-bold bg-muted/50 text-foreground rounded-xl border border-border">
+                    <FiLayers className="mr-2 h-3.5 w-3.5 text-primary" /> ISBN: {book.isbn}
+                  </span>
                 )}
                 {book.genre && (
-                  <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Genre:</dt>
-                    <dd className="text-sm text-gray-900">{book.genre}</dd>
-                  </div>
+                  <span className="inline-flex items-center px-3.5 py-1.5 text-xs font-bold bg-muted/50 text-foreground rounded-xl border border-border">
+                    <FiInfo className="mr-2 h-3.5 w-3.5 text-primary" /> {book.genre}
+                  </span>
                 )}
-              </dl>
+              </div>
             </div>
 
-            <div className="bg-blue-50 p-6 rounded-lg shadow">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Library Information</h3>
-              <dl className="space-y-2">
-                {book.createdAt && (
-                  <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Added to Library:</dt>
-                    <dd className="text-sm text-gray-900">{new Date(book.createdAt).toLocaleDateString()}</dd>
+            {/* Description Card */}
+            {book.description && (
+              <Card className="border-none shadow-xl shadow-black/5">
+                <CardHeader className="p-6 bg-muted/20 border-b border-border">
+                  <h2 className="font-bold text-lg text-foreground flex items-center gap-2">
+                    <FiInfo className="text-primary" /> Overview & Synopsis
+                  </h2>
+                </CardHeader>
+                <CardContent className="p-6 lg:p-8">
+                  <p className="text-secondary-foreground text-lg leading-relaxed whitespace-pre-line">
+                    {book.description}
+                  </p>
+                </CardContent>
+              </Card>
+            )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Availability Stats */}
+              <Card className="border-none shadow-xl shadow-black/5 h-full">
+                <CardHeader className="p-6 bg-muted/20 border-b border-border">
+                  <h3 className="font-bold text-foreground">Library Access</h3>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
+                    <span className="text-sm font-medium text-secondary-foreground">Format</span>
+                    <span className="text-sm font-bold text-foreground">Digital / PDF</span>
                   </div>
-                )}
-                {book.totalCopies !== undefined && (
-                  <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Total Copies:</dt>
-                    <dd className="text-sm text-gray-900">{book.totalCopies}</dd>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
+                    <span className="text-sm font-medium text-secondary-foreground">Availability</span>
+                    <span className="flex items-center text-sm font-bold text-green-600">
+                      <FiCheckCircle className="mr-1.5" /> Instant Load
+                    </span>
                   </div>
-                )}
-                {book.borrowedCopies !== undefined && (
-                  <div className="flex justify-between">
-                    <dt className="text-sm font-medium text-gray-500">Borrowed Copies:</dt>
-                    <dd className="text-sm text-gray-900">{book.borrowedCopies}</dd>
+                  {book.totalCopies !== undefined && (
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
+                      <span className="text-sm font-medium text-secondary-foreground">Copies Available</span>
+                      <span className="text-sm font-bold text-foreground">
+                        {book.totalCopies - (book.borrowedCopies || 0)} / {book.totalCopies}
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Quick Details */}
+              <Card className="border-none shadow-xl shadow-black/5 h-full">
+                <CardHeader className="p-6 bg-muted/20 border-b border-border">
+                  <h3 className="font-bold text-foreground">Technical Info</h3>
+                </CardHeader>
+                <CardContent className="p-6 space-y-4">
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
+                    <span className="text-sm font-medium text-secondary-foreground">Added On</span>
+                    <span className="text-sm font-bold text-foreground">
+                      {book.createdAt ? new Date(book.createdAt).toLocaleDateString() : 'N/A'}
+                    </span>
                   </div>
-                )}
-              </dl>
+                  <div className="flex items-center justify-between p-3 rounded-xl bg-muted/30">
+                    <span className="text-sm font-medium text-secondary-foreground">Archive Source</span>
+                    <span className="text-sm font-bold text-foreground">Global Registry</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Action Area */}
+            <div className="pt-4 mt-auto">
+              <Button
+                variant="primary"
+                onClick={() => {
+                  const params = new URLSearchParams({
+                    title: book.title,
+                    author: book.author,
+                    description: book.description || ''
+                  });
+                  router.push(`/book-request?${params.toString()}`);
+                }}
+                className="w-full h-16 rounded-2xl text-lg font-bold flex items-center justify-center gap-3"
+              >
+                <FiDownload className="w-6 h-6" />
+                Request Digital Access
+              </Button>
+              <p className="text-center text-xs text-secondary-foreground mt-4 font-medium italic">
+                Sourcing an electronic copy may take up to 24 hours depending on the archive status.
+              </p>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }
 
 export default function BookDetailsPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col gap-5 items-center justify-center bg-background">
+        <div className="border-4 border-primary/20 border-t-primary rounded-full w-12 h-12 animate-spin"></div>
+      </div>
+    }>
       <BookDetailsContent />
     </Suspense>
   );

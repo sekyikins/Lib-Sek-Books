@@ -5,7 +5,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { Role } from '@/types/auth';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FiPlus, FiUpload, FiCheck, FiAlertCircle, FiLink, FiX } from 'react-icons/fi';
+import { FiPlus, FiUpload, FiCheck, FiAlertCircle, FiX, FiFileText, FiImage, FiInfo, FiLayers, FiTrash2 } from 'react-icons/fi';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
 
 interface BookData {
   title: string;
@@ -18,20 +21,6 @@ interface BookData {
   language?: string;
   genre?: string;
 }
-
-interface LinkBookData {
-  title: string;
-  author: string;
-  file: File | null;
-  coverFile: File | null;
-  isbn?: string;
-  description?: string;
-  published_date?: string;
-  language?: string;
-  genre?: string;
-}
-
-type InputMode = 'link' | 'file';
 
 interface TagInputProps {
   label: string;
@@ -72,21 +61,23 @@ function TagInput({ label, value, onChange, placeholder, required }: TagInputPro
   };
 
   return (
-    <div>
-      <label className="block text-sm font-medium text-gray-700 mb-2">
-        {label} {required && '*'}
+    <div className="space-y-2">
+      <label className="text-sm font-bold text-foreground">
+        {label} {required && <span className="text-destructive">*</span>}
       </label>
-      <div className="flex flex-wrap gap-2 p-1.5 bg-white border border-gray-300 rounded-md shadow-sm focus-within:ring-2 focus-within:ring-indigo-500 focus-within:border-indigo-500 min-h-[38px]">
+      <div className="flex flex-wrap gap-2 p-2 bg-card border border-border rounded-xl focus-within:ring-4 focus-within:ring-primary/10 focus-within:border-primary transition-all min-h-[46px]">
         {tags.map((tag, i) => (
-          <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-md text-sm font-medium bg-indigo-100 text-indigo-700">
+          <span key={i} className="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-bold bg-primary/10 text-primary border border-primary/20">
             {tag}
-            <button
+            <Button
               type="button"
+              variant="ghost"
+              size="icon"
               onClick={() => removeTag(i)}
-              className="ml-1 inline-flex items-center p-0.5 rounded-full text-indigo-400 hover:bg-indigo-200 hover:text-indigo-500 focus:outline-none"
+              className="ml-1.5 h-4 w-4 min-h-0 min-w-0 p-0 text-primary/70 hover:text-destructive hover:bg-destructive/10 rounded-full"
             >
               <FiX className="h-3 w-3" />
-            </button>
+            </Button>
           </span>
         ))}
         <input
@@ -95,7 +86,7 @@ function TagInput({ label, value, onChange, placeholder, required }: TagInputPro
           onChange={(e) => setInputValue(e.target.value)}
           onKeyDown={handleKeyDown}
           onBlur={addTag}
-          className="flex-1 min-w-[120px] outline-none text-sm"
+          className="flex-1 min-w-[120px] bg-transparent outline-none text-sm placeholder:text-secondary-foreground"
           placeholder={tags.length === 0 ? placeholder : ""}
           required={required && tags.length === 0}
         />
@@ -111,32 +102,18 @@ function AddBooksContent() {
   const [books, setBooks] = useState<BookData[]>([
     { title: '', author: '', file: null, coverFile: null, isbn: '', description: '', published_date: '', language: 'English', genre: '' }
   ]);
-  const [linkBook, setLinkBook] = useState<LinkBookData>({
-    title: '',
-    author: '',
-    file: null,
-    coverFile: null,
-    isbn: '',
-    description: '',
-    published_date: '',
-    language: 'English',
-    genre: ''
-  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
-  const [linkError, setLinkError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Handle URL parameters for editing
   useEffect(() => {
     const editId = searchParams.get('edit');
     const title = searchParams.get('title');
     const author = searchParams.get('author');
-    const link = searchParams.get('link');
     
     if (editId && title && author) {
-      setLinkBook({
+      setBooks([{
         title: decodeURIComponent(title),
         author: decodeURIComponent(author),
         file: null,
@@ -146,13 +123,13 @@ function AddBooksContent() {
         published_date: searchParams.get('published_date') || '',
         language: searchParams.get('language') || 'English',
         genre: searchParams.get('genre') || ''
-      });
+      }]);
       setEditingId(editId);
     }
   }, [searchParams]);
 
   const addNewBook = () => {
-    setBooks([...books, { title: '', author: '', file: null, coverFile: null }]);
+    setBooks([...books, { title: '', author: '', file: null, coverFile: null, isbn: '', description: '', published_date: '', language: 'English', genre: '' }]);
     setErrors([...errors, '']);
   };
 
@@ -163,23 +140,11 @@ function AddBooksContent() {
     setErrors(newErrors);
   };
 
-  const clearBook = (index: number) => {
-    const newBooks = [...books];
-    newBooks[index] = { title: '', author: '', file: null, coverFile: null };
-    setBooks(newBooks);
-    
-    // Clear error for this book
-    const newErrors = [...errors];
-    newErrors[index] = '';
-    setErrors(newErrors);
-  };
-
   const updateBook = (index: number, field: keyof BookData, value: string | File | null) => {
     const newBooks = [...books];
     newBooks[index] = { ...newBooks[index], [field]: value };
     setBooks(newBooks);
     
-    // Clear error for this book when user makes changes
     const newErrors = [...errors];
     newErrors[index] = '';
     setErrors(newErrors);
@@ -189,162 +154,18 @@ function AddBooksContent() {
     const newErrors = books.map(book => {
       if (!book.title.trim()) return 'Title is required';
       if (!book.author.trim()) return 'Author is required';
-      
-      if (!book.file) return 'Book file is required';
+      if (!book.file && !editingId) return 'Book file is required';
       if (book.file && !book.file.name.match(/\.(pdf|epub|doc|docx|txt)$/i)) {
-        return 'Invalid book file type. Only PDF, EPUB, DOC, DOCX, and TXT files are allowed';
+        return 'Invalid book file type (PDF, EPUB, DOC, DOCX, TXT allowed)';
       }
-      if (book.file && book.file.size > 50 * 1024 * 1024) { // 50MB limit
-        return 'Book file size must be less than 50MB';
+      if (book.file && book.file.size > 50 * 1024 * 1024) {
+        return 'File size must be less than 50MB';
       }
-
-      if (book.coverFile && !book.coverFile.type.startsWith('image/')) {
-        return 'Invalid cover image type. Please upload an image file.';
-      }
-
       return '';
     });
     
     setErrors(newErrors);
     return newErrors.every(error => !error);
-  };
-
-  const validateLinkBook = () => {
-    if (!linkBook.title.trim()) {
-      setLinkError('Title is required');
-      return false;
-    }
-    if (!linkBook.author.trim()) {
-      setLinkError('Author is required');
-      return false;
-    }
-    
-    if (!linkBook.file && !editingId) {
-      setLinkError('Book file is required');
-      return false;
-    }
-    if (linkBook.file && !linkBook.file.name.match(/\.(pdf|epub|doc|docx|txt)$/i)) {
-      setLinkError('Invalid book file type. Only PDF, EPUB, DOC, DOCX, and TXT files are allowed');
-      return false;
-    }
-    if (linkBook.file && linkBook.file.size > 50 * 1024 * 1024) { // 50MB limit
-      setLinkError('Book file size must be less than 50MB');
-      return false;
-    }
-    
-    if (linkBook.coverFile && !linkBook.coverFile.type.startsWith('image/')) {
-      setLinkError('Invalid cover image type. Please upload an image file.');
-      return false;
-    }
-    
-    setLinkError('');
-    return true;
-  };
-
-  const checkFileExists = async (url: string): Promise<boolean> => {
-    try {
-      const response = await fetch(url, { method: 'HEAD' });
-      return response.ok;
-    } catch {
-      return false;
-    }
-  };
-
-  const deleteFromStorage = async (url: string): Promise<void> => {
-    // This is a placeholder for actual storage deletion
-    // In a real implementation, you would extract the file ID from the URL
-    // and use the storage API (Google Drive, S3, etc.) to delete it
-    console.log('Would delete file from storage:', url);
-  };
-
-  const handleLinkSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateLinkBook()) {
-      return;
-    }
-
-    setUploading(true);
-    setLinkError('');
-    setSuccessMessage('');
-
-    try {
-      let fileUrl = '';
-      let coverUrl = '';
-      
-      // Handle book file upload
-      if (linkBook.file) {
-        fileUrl = await uploadToSupabaseStorage(linkBook.file, 'Books');
-      }
-      
-      // Handle cover image upload
-      if (linkBook.coverFile) {
-        coverUrl = await uploadToSupabaseStorage(linkBook.coverFile, 'Cover Image');
-      }
-
-      const bookData: any = {
-        title: linkBook.title.trim(),
-        author: linkBook.author.trim(),
-        isbn: linkBook.isbn?.trim(),
-        description: linkBook.description?.trim(),
-        published_date: linkBook.published_date?.trim(),
-        language: linkBook.language?.trim(),
-        genre: linkBook.genre?.trim()
-      };
-      
-      if (fileUrl) bookData.file_link = fileUrl;
-      if (coverUrl) bookData.cover_link = coverUrl;
-
-      let response;
-      if (editingId) {
-        // Update existing book
-        response = await fetch('/api/books-admin', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            id: editingId,
-            ...bookData
-          }),
-        });
-      } else {
-        // Create new book
-        response = await fetch('/api/books-admin', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            books: [bookData]
-          }),
-        });
-      }
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to save book');
-      }
-      
-      // Successfully saved
-
-      setSuccessMessage(`Book ${editingId ? 'updated' : 'added'} successfully!`);
-      
-      // Reset form after successful submission
-      setTimeout(() => {
-        setLinkBook({ title: '', author: '', file: null, coverFile: null });
-        setEditingId(null);
-        setSuccessMessage('');
-        // Clear URL parameters
-        router.replace('/add-books');
-      }, 2000);
-
-    } catch (error) {
-      console.error('Error saving book:', error);
-      setLinkError(error instanceof Error ? error.message : 'An unexpected error occurred');
-    } finally {
-      setUploading(false);
-    }
   };
 
   const uploadToSupabaseStorage = async (file: File, bucket: string = 'Books'): Promise<string> => {
@@ -368,70 +189,68 @@ function AddBooksContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateBooks()) {
-      return;
-    }
+    if (!validateBooks()) return;
 
     setUploading(true);
-    setErrors([]);
     setSuccessMessage('');
 
     try {
-      const booksToAdd = [];
+      const booksToSave = [];
       
-      for (let i = 0; i < books.length; i++) {
-        const book = books[i];
-        if (book.title && book.author && book.file) {
-          // 1. Upload Book File
-          const fileUrl = await uploadToSupabaseStorage(book.file, 'Books');
-          
-          // 2. Upload Cover Image (if provided)
-          let coverUrl = '';
-          if (book.coverFile) {
-            coverUrl = await uploadToSupabaseStorage(book.coverFile, 'Cover Image');
-          }
-          
-          booksToAdd.push({
-            title: book.title.trim(),
-            author: book.author.trim(),
-            file_link: fileUrl,
-            cover_link: coverUrl || null,
-            isbn: book.isbn?.trim(),
-            description: book.description?.trim(),
-            published_date: book.published_date?.trim(),
-            language: book.language?.trim(),
-            genre: book.genre?.trim()
-          });
+      for (const book of books) {
+        let fileUrl = '';
+        let coverUrl = '';
+        
+        if (book.file) {
+          fileUrl = await uploadToSupabaseStorage(book.file, 'Books');
         }
+        
+        if (book.coverFile) {
+          coverUrl = await uploadToSupabaseStorage(book.coverFile, 'Cover Image');
+        }
+
+        const bookData: Record<string, string | undefined> = {
+          title: book.title.trim(),
+          author: book.author.trim(),
+          isbn: book.isbn?.trim(),
+          description: book.description?.trim(),
+          published_date: book.published_date?.trim(),
+          language: book.language?.trim(),
+          genre: book.genre?.trim()
+        };
+        
+        if (fileUrl) bookData.file_link = fileUrl;
+        if (coverUrl) bookData.cover_link = coverUrl;
+        
+        booksToSave.push(bookData);
       }
 
-      // Save to database via API
-      const saveResponse = await fetch('/api/books-admin', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          books: booksToAdd
-        }),
-      });
+      let response;
+      if (editingId) {
+        response = await fetch('/api/books-admin', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ id: editingId, ...booksToSave[0] }),
+        });
+      } else {
+        response = await fetch('/api/books-admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ books: booksToSave }),
+        });
+      }
 
-      if (!saveResponse.ok) {
-        const errorData = await saveResponse.json();
+      if (!response.ok) {
+        const errorData = await response.json();
         throw new Error(errorData.error || 'Failed to save books');
       }
 
-      setSuccessMessage(`Successfully added ${booksToAdd.length} book(s) to the library!`);
-      
-      // Reset form after successful submission
+      setSuccessMessage(`Successfully ${editingId ? 'updated' : 'added'} ${booksToSave.length} book(s)!`);
       setTimeout(() => {
-        setBooks([{ title: '', author: '', file: null, coverFile: null }]);
-        setSuccessMessage('');
-      }, 3000);
+        router.push('/book-management');
+      }, 2000);
 
     } catch (error) {
-      console.error('Error adding books:', error);
       setErrors([error instanceof Error ? error.message : 'An unexpected error occurred']);
     } finally {
       setUploading(false);
@@ -440,515 +259,271 @@ function AddBooksContent() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col gap-5 items-center justify-center">
-        <div className="text-lg text-blue-600">Loading...</div>
-        <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
+      <div className="min-h-screen flex flex-col gap-5 items-center justify-center bg-background">
+        <div className="text-lg font-medium text-primary animate-pulse">Preparing Archives...</div>
+        <div className="border-4 border-primary/20 border-t-primary rounded-full w-12 h-12 animate-spin"></div>
       </div>
     );
   }
 
   return (
     <ProtectedRoute requiredRole={Role.ADMIN}>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="px-4 sm:px-0">
-            <div className="border-4 border-dashed border-gray-200 rounded-lg p-4 md:p-8">
-              <div className="flex justify-between items-center mb-6">
-                <div>
-                  <h1 className="text-3xl font-bold text-gray-900">Add New Books</h1>
-                  <p className="text-lg text-gray-600 mt-2">Upload multiple books to the library at once</p>
+      <DashboardLayout>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 mt-2">
+          <div className="flex-1">
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground mb-2">
+              {editingId ? 'Edit' : 'Add'} <span className="text-primary">Books</span>
+            </h1>
+            <p className="text-secondary-foreground font-medium">
+              {editingId ? 'Update existing book details and metadata.' : 'Upload new literary treasures to the shared catalog.'}
+            </p>
+          </div>
+          <Button variant="outline" onClick={() => router.replace('/book-management')} className="rounded-xl">
+            Cancel & Return
+          </Button>
+        </div>
+
+        {successMessage && (
+          <Card className="bg-green-500/10 border-green-500/20 mb-8">
+            <CardContent className="p-4 text-green-600 font-bold flex items-center">
+              <FiCheck className="mr-2 h-5 w-5" /> {successMessage}
+            </CardContent>
+          </Card>
+        )}
+
+        {errors.some(e => e) && (
+          <Card className="bg-destructive/10 border-destructive/20 mb-8">
+            <CardHeader className="p-4 pb-0 text-destructive font-bold flex items-center gap-2">
+              <FiAlertCircle className="h-5 w-5" /> Attention Required
+            </CardHeader>
+            <CardContent className="p-4 space-y-1">
+              {errors.filter(e => e).map((error, i) => (
+                <p key={i} className="text-sm font-medium text-destructive">{error}</p>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-8 pb-12">
+          {books.map((book, index) => (
+            <Card key={index} className="border-none shadow-xl shadow-black/5 overflow-visible">
+              <CardHeader className="flex items-center justify-between p-6 bg-muted/20 border-b border-border">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-foreground">Book Details</h3>
+                    <p className="text-xs text-secondary-foreground">Information & Metadata</p>
+                  </div>
                 </div>
-                <div className="space-x-4">
-                  <button
-                    title='Back To Book Management'
-                    onClick={() => router.replace('/book-management')}
-                    className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-gray-600 text-sm font-medium rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-offset-2 focus:ring-gray-600"
+                {books.length > 1 && !editingId && (
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    type="button"
+                    onClick={() => removeBook(index)}
+                    className="text-destructive hover:bg-destructive/10"
                   >
-                    Back&nbsp;<span className='hidden md:inline'>to Management</span>
-                  </button>
-                </div>
-              </div>
-
-              {successMessage && (
-                <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg flex items-center">
-                  <FiCheck className="mr-2" />
-                  {successMessage}
-                </div>
-              )}
-
-              {errors.some(error => error) && (
-                <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
-                  <FiAlertCircle className="mr-2" />
-                  Please fix the errors below before submitting.
-                </div>
-              )}
-
-              {linkError && (
-                <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg flex items-center">
-                  <FiAlertCircle className="mr-2" />
-                  {linkError}
-                </div>
-              )}
-
-              {editingId && (
-                <div className="mb-6 bg-white p-5 rounded-lg shadow-md border border-gray-200">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">
-                    Edit Book
-                  </h2>
-                  
-                  <div className="mb-6 p-4 bg-indigo-50 border border-indigo-200 rounded-lg">
-                    <p className="text-sm text-indigo-700">
-                      <strong>Note:</strong> External URL links are no longer supported. All books must be uploaded directly.
-                    </p>
-                  </div>
-                  
-                  <form onSubmit={handleLinkSubmit} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Title *
-                        </label>
-                        <input
-                          type="text"
-                          value={linkBook.title}
-                          onChange={(e) => setLinkBook({ ...linkBook, title: e.target.value })}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="Enter book title"
-                          required
-                        />
-                      </div>
-                      <TagInput
-                        label="Author(s)"
-                        value={linkBook.author}
-                        onChange={(val) => setLinkBook({ ...linkBook, author: val })}
-                        placeholder="e.g. Frank Wood"
+                    <FiTrash2 className="mr-2" /> Remove
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent className="p-8 space-y-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Title <span className="text-destructive">*</span></label>
+                    <div className="relative">
+                      <FiFileText className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-foreground" />
+                      <input
+                        type="text"
+                        value={book.title}
+                        onChange={(e) => updateBook(index, 'title', e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                        placeholder="e.g. The Great Gatsby"
                         required
                       />
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          ISBN
-                        </label>
-                        <input
-                          type="text"
-                          value={linkBook.isbn}
-                          onChange={(e) => setLinkBook({ ...linkBook, isbn: e.target.value })}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="Enter ISBN"
-                        />
-                      </div>
-                      <TagInput
-                        label="Genre(s)"
-                        value={linkBook.genre || ''}
-                        onChange={(val) => setLinkBook({ ...linkBook, genre: val })}
-                        placeholder="e.g. Programming"
+                    </div>
+                  </div>
+                  
+                  <TagInput
+                    label="Author(s)"
+                    value={book.author}
+                    onChange={(val) => updateBook(index, 'author', val)}
+                    placeholder="e.g. F. Scott Fitzgerald"
+                    required
+                  />
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">ISBN</label>
+                    <div className="relative">
+                      <FiLayers className="absolute left-3 top-1/2 -translate-y-1/2 text-secondary-foreground" />
+                      <input
+                        type="text"
+                        value={book.isbn}
+                        onChange={(e) => updateBook(index, 'isbn', e.target.value)}
+                        className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                        placeholder="ISBN-13"
                       />
                     </div>
+                  </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Published Date
-                        </label>
-                        <input
-                          type="text"
-                          value={linkBook.published_date}
-                          onChange={(e) => setLinkBook({ ...linkBook, published_date: e.target.value })}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="e.g. 2023-01-01"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Language
-                        </label>
-                        <input
-                          type="text"
-                          value={linkBook.language}
-                          onChange={(e) => setLinkBook({ ...linkBook, language: e.target.value })}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="Enter language"
-                        />
-                      </div>
-                    </div>
+                  <TagInput
+                    label="Genre(s)"
+                    value={book.genre || ''}
+                    onChange={(val) => updateBook(index, 'genre', val)}
+                    placeholder="e.g. Classic, Fiction"
+                  />
+                </div>
 
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Description
-                      </label>
-                      <textarea
-                        value={linkBook.description}
-                        onChange={(e) => setLinkBook({ ...linkBook, description: e.target.value })}
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="Enter book description"
-                        rows={3}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Publication Date</label>
+                    <input
+                      type="text"
+                      value={book.published_date}
+                      onChange={(e) => updateBook(index, 'published_date', e.target.value)}
+                      className="w-full px-4 py-2.5 bg-card border border-border rounded-xl focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                      placeholder="e.g. 1925"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Language</label>
+                    <input
+                      type="text"
+                      value={book.language}
+                      onChange={(e) => updateBook(index, 'language', e.target.value)}
+                      className="w-full px-4 py-2.5 bg-card border border-border rounded-xl focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                      placeholder="English"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-bold text-foreground">Status / Tag</label>
+                    <input
+                      type="text"
+                      disabled
+                      value="Digital Archive"
+                      className="w-full px-4 py-2.5 bg-muted/30 border border-border rounded-xl text-secondary-foreground font-medium"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-foreground">Description</label>
+                  <div className="relative">
+                    <FiInfo className="absolute left-3 top-3 text-secondary-foreground" />
+                    <textarea
+                      value={book.description}
+                      onChange={(e) => updateBook(index, 'description', e.target.value)}
+                      className="w-full pl-10 pr-4 py-2.5 bg-card border border-border rounded-xl focus:ring-4 focus:ring-primary/10 transition-all outline-none min-h-[100px]"
+                      placeholder="Brief overview of the book contents..."
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                  <div className="space-y-3">
+                    <label className="text-sm font-bold text-foreground">Book Source <span className="text-destructive">*</span></label>
+                    <label className="group relative block cursor-pointer">
+                      <input
+                        type="file"
+                        accept=".pdf,.epub,.doc,.docx,.txt"
+                        onChange={(e) => updateBook(index, 'file', e.target.files?.[0] || null)}
+                        className="hidden"
                       />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pb-4">
-                      <div className="transition-all duration-300 ease-in-out">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Book File *
-                        </label>
-                        <div className="flex items-center space-x-4">
-                          <label className="flex-1">
-                            <input
-                              type="file"
-                              accept=".pdf,.epub,.doc,.docx,.txt"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0] || null;
-                                setLinkBook({ ...linkBook, file });
-                              }}
-                              className="hidden"
-                            />
-                            <div className="border-2 shadow-sm border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-white">
-                              {linkBook.file ? (
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center">
-                                    <FiUpload className="w-5 h-5 text-indigo-600 mr-2" />
-                                    <span className="text-sm text-gray-700 truncate max-w-[150px]">{linkBook.file.name}</span>
-                                    <span className="text-xs text-gray-500 ml-2">
-                                      ({(linkBook.file.size / 1024 / 1024).toFixed(2)} MB)
-                                    </span>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center">
-                                  <FiUpload className="w-6 h-6 text-gray-400 mb-1" />
-                                  <span className="text-xs text-gray-600 font-medium">Click to upload Book</span>
-                                </div>
-                              )}
+                      <div className="border-2 border-dashed border-border rounded-2xl p-8 hover:border-primary hover:bg-primary/5 transition-all text-center">
+                        {book.file ? (
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary mb-2">
+                              <FiUpload className="w-6 h-6" />
                             </div>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="transition-all duration-300 ease-in-out">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Cover Image
-                        </label>
-                        <div className="flex items-center space-x-4">
-                          <label className="flex-1">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0] || null;
-                                setLinkBook({ ...linkBook, coverFile: file });
-                              }}
-                              className="hidden"
-                            />
-                            <div className="border-2 shadow-sm border-dashed border-gray-300 rounded-lg p-4 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-white">
-                              {linkBook.coverFile ? (
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center">
-                                    <FiPlus className="w-5 h-5 text-green-600 mr-2" />
-                                    <span className="text-sm text-gray-700 truncate max-w-[150px]">{linkBook.coverFile.name}</span>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center">
-                                  <FiPlus className="w-6 h-6 text-gray-400 mb-1" />
-                                  <span className="text-xs text-gray-600 font-medium">Click to upload Cover</span>
-                                </div>
-                              )}
-                            </div>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex space-x-4">
-                      <button
-                        title='Add Book To List'
-                        type="submit"
-                        disabled={uploading}
-                        className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-indigo-700 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                      >
-                        {uploading ? (
-                          <>
-                            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                            {editingId ? 'Updating...' : 'Adding...'}
-                          </>
+                            <p className="font-bold text-foreground truncate max-w-full">{book.file.name}</p>
+                            <p className="text-xs text-secondary-foreground">{(book.file.size / 1024 / 1024).toFixed(2)} MB</p>
+                          </div>
                         ) : (
-                          <>
-                            <FiLink className="mr-2" />
-                            {editingId ? 'Update Book' : 'Add Book'}
-                          </>
-                        )}
-                      </button>
-                      <button
-                        title='Hide Link Form'
-                        type="button"
-                        onClick={() => {
-                          setLinkBook({ title: '', author: '', file: null, coverFile: null });
-                          setEditingId(null);
-                          setLinkError('');
-                          router.replace('/add-books');
-                        }}
-                        className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-gray-600 text-sm font-medium rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-offset-2 focus:ring-gray-600"
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  </form>
-                </div>
-              )}
-
-              <div className="border-t border-gray-200 pt-6">
-                <h2 className="text-xl font-semibold text-gray-900 mb-4">Upload Files</h2>
-                <form onSubmit={handleSubmit} className="space-y-6">
-                {books.map((book, index) => (
-                  <div key={index} className="bg-white p-6 rounded-lg shadow-md border border-gray-200">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Book {index + 1}
-                      </h3>
-                      <div className="flex space-x-4">
-                        <button
-                          type="button"
-                          onClick={() => clearBook(index)}
-                          className="text-blue-600 hover:text-blue-800 p-2 shadow-lg border border-blue-400 rounded-md hover:bg-blue-50 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-blue-400"
-                          title="Clear Book Content"
-                        >
-                          Clear
-                        </button>
-                        {books.length > 1 && (
-                          <button
-                            type="button"
-                            onClick={() => removeBook(index)}
-                            className="text-red-600 hover:text-red-800 p-2 shadow-lg border border-red-400 rounded-md hover:bg-red-50 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-red-400"
-                            title="Remove Book"
-                          >
-                            Close
-                          </button>
+                          <div className="flex flex-col items-center gap-2">
+                            <FiUpload className="w-10 h-10 text-secondary-foreground mb-2 group-hover:text-primary transition-colors" />
+                            <p className="font-bold text-foreground">Click to upload document</p>
+                            <p className="text-xs text-secondary-foreground">PDF, EPUB, DOC, TXT up to 50MB</p>
+                          </div>
                         )}
                       </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Title *
-                        </label>
-                        <input
-                          type="text"
-                          value={book.title}
-                          onChange={(e) => updateBook(index, 'title', e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="Enter book title"
-                          required
-                        />
-                      </div>
-                      <TagInput
-                        label="Author(s)"
-                        value={book.author}
-                        onChange={(val) => updateBook(index, 'author', val)}
-                        placeholder="e.g. Frank Wood"
-                        required
-                      />
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          ISBN
-                        </label>
-                        <input
-                          type="text"
-                          value={book.isbn}
-                          onChange={(e) => updateBook(index, 'isbn', e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="Enter ISBN"
-                        />
-                      </div>
-                      <TagInput
-                        label="Genre(s)"
-                        value={book.genre || ''}
-                        onChange={(val) => updateBook(index, 'genre', val)}
-                        placeholder="e.g. Programming"
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Published Date
-                        </label>
-                        <input
-                          type="text"
-                          value={book.published_date}
-                          onChange={(e) => updateBook(index, 'published_date', e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="e.g. 2023-01-01"
-                        />
-                      </div>
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Language
-                        </label>
-                        <input
-                          type="text"
-                          value={book.language}
-                          onChange={(e) => updateBook(index, 'language', e.target.value)}
-                          className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          placeholder="Enter language"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="mb-4">
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        Description
-                      </label>
-                      <textarea
-                        value={book.description}
-                        onChange={(e) => updateBook(index, 'description', e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                        placeholder="Enter book description"
-                        rows={2}
-                      />
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div className="transition-all duration-300 ease-in-out">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Book File *
-                        </label>
-                        <div className="flex items-center space-x-4">
-                          <label className="flex-1">
-                            <input
-                              type="file"
-                              accept=".pdf,.epub,.doc,.docx,.txt"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0] || null;
-                                updateBook(index, 'file', file);
-                              }}
-                              className="hidden"
-                            />
-                            <div className="border-2 shadow-sm border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-gray-50">
-                              {book.file ? (
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center">
-                                    <FiUpload className="w-6 h-6 text-indigo-600 mr-3" />
-                                    <span className="text-sm font-medium text-gray-800 truncate max-w-[200px]">{book.file.name}</span>
-                                    <span className="text-xs text-gray-500 ml-3">
-                                      ({(book.file.size / 1024 / 1024).toFixed(2)} MB)
-                                    </span>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center">
-                                  <FiUpload className="w-10 h-10 text-gray-400 mb-3" />
-                                  <span className="text-sm text-gray-600 font-semibold">Click to upload Book File</span>
-                                  <span className="text-xs text-gray-500 mt-2">
-                                    PDF, EPUB, DOC, DOCX, TXT (Max 50MB)
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </label>
-                        </div>
-                      </div>
-
-                      <div className="transition-all duration-300 ease-in-out">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          Cover Image
-                        </label>
-                        <div className="flex items-center space-x-4">
-                          <label className="flex-1">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={(e) => {
-                                const file = e.target.files?.[0] || null;
-                                updateBook(index, 'coverFile', file);
-                              }}
-                              className="hidden"
-                            />
-                            <div className="border-2 shadow-sm border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-indigo-500 transition-colors bg-gray-50">
-                              {book.coverFile ? (
-                                <div className="flex items-center justify-between">
-                                  <div className="flex items-center">
-                                    <FiPlus className="w-6 h-6 text-green-600 mr-3" />
-                                    <span className="text-sm font-medium text-gray-800 truncate max-w-[200px]">{book.coverFile.name}</span>
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="flex flex-col items-center">
-                                  <FiPlus className="w-10 h-10 text-gray-400 mb-3" />
-                                  <span className="text-sm text-gray-600 font-semibold">Click to upload Cover Image</span>
-                                  <span className="text-xs text-gray-500 mt-2">
-                                    JPG, PNG, WEBP, etc.
-                                  </span>
-                                </div>
-                              )}
-                            </div>
-                          </label>
-                        </div>
-                      </div>
-                    </div>
-
-                    {errors[index] && (
-                      <div className="mt-2 text-sm text-red-600">
-                        {errors[index]}
-                      </div>
-                    )}
+                    </label>
                   </div>
-                ))}
 
-                <div className="flex justify-between items-center pt-6 border-t border-gray-200">
-                    <button
-                      title='Clear All Books'
-                      type="button"
-                      onClick={() => {
-                        setBooks([{ title: '', author: '', file: null, coverFile: null }]);
-                        setErrors([]);
-                        setSuccessMessage('');
-                      }}
-                      className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-gray-600 text-sm font-medium rounded-md text-gray-700 bg-gray-200 hover:bg-gray-300 focus:ring-2 focus:ring-offset-2 focus:ring-gray-600"
-                    >
-                      Close All
-                    </button>
-
-                  <div className="space-x-4 flex">
-                    <button
-                      title='Add Book'
-                      type="button"
-                      onClick={addNewBook}
-                      className="inline-flex items-center px-2 md:px-4 py-2 shadow-lg border-2 border-green-600 text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600 focus:ring-2 focus:ring-offset-2 focus:ring-green-600"
-                    >
-                      <FiPlus className="mr-2" />
-                      Add&nbsp;<span className='hidden md:inline'>Another</span>&nbsp;Book
-                    </button>
-                    
-                    <button
-                      title='Upload Book(s)'
-                      type="submit"
-                      disabled={uploading}
-                      className="inline-flex items-center px-2 md:px-6 py-2 shadow-lg border-2 border-indigo-700 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {uploading ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                          Uploading...
-                        </>
-                      ) : (
-                        <>
-                          <FiUpload className="mr-2" />
-                          Upload&nbsp;<span className='hidden md:inline'>Books</span>
-                        </>
-                      )}
-                    </button>
+                  <div className="space-y-3">
+                    <label className="text-sm font-bold text-foreground">Cover Art</label>
+                    <label className="group relative block cursor-pointer">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => updateBook(index, 'coverFile', e.target.files?.[0] || null)}
+                        className="hidden"
+                      />
+                      <div className="border-2 border-dashed border-border rounded-2xl p-8 hover:border-primary hover:bg-primary/5 transition-all text-center">
+                        {book.coverFile ? (
+                          <div className="flex flex-col items-center gap-2">
+                            <div className="w-12 h-12 rounded-full bg-green-500/10 flex items-center justify-center text-green-600 mb-2">
+                              <FiImage className="w-6 h-6" />
+                            </div>
+                            <p className="font-bold text-foreground truncate max-w-full">{book.coverFile.name}</p>
+                            <p className="text-xs text-secondary-foreground">Thumbnail Image</p>
+                          </div>
+                        ) : (
+                          <div className="flex flex-col items-center gap-2">
+                            <FiImage className="w-10 h-10 text-secondary-foreground mb-2 group-hover:text-primary transition-colors" />
+                            <p className="font-bold text-foreground">Upload cover image</p>
+                            <p className="text-xs text-secondary-foreground">High-quality JPG or PNG</p>
+                          </div>
+                        )}
+                      </div>
+                    </label>
                   </div>
                 </div>
-              </form>
-            </div>
+              </CardContent>
+            </Card>
+          ))}
+
+          <div className="flex flex-col md:flex-row justify-between items-center gap-6 pt-6">
+            {!editingId ? (
+              <Button type="button" variant="secondary" onClick={addNewBook} className="w-full md:w-auto rounded-xl h-12 px-8">
+                <FiPlus className="mr-2" /> Add Another Book
+              </Button>
+            ) : <div />}
+
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <Button 
+                type="submit" 
+                variant="primary" 
+                disabled={uploading} 
+                className="flex-1 md:flex-none h-12 px-12 rounded-xl text-lg font-bold shadow-xl shadow-primary/20"
+              >
+                {uploading ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-3"></div>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <FiCheck className="mr-2" /> {editingId ? 'Update Record' : 'Upload to Library'}
+                  </>
+                )}
+              </Button>
             </div>
           </div>
-        </div>
-      </div>
+        </form>
+      </DashboardLayout>
     </ProtectedRoute>
   );
 }
 
 export default function AddBooksPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={
+      <div className="min-h-screen flex flex-col gap-5 items-center justify-center bg-background">
+        <div className="border-4 border-primary/20 border-t-primary rounded-full w-12 h-12 animate-spin"></div>
+      </div>
+    }>
       <AddBooksContent />
     </Suspense>
   );

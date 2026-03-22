@@ -1,170 +1,214 @@
 'use client';
 
+import React from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { StatCard } from '@/components/ui/StatCard';
+import { Card, CardHeader, CardContent } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { 
+  FiBook, 
+  FiUsers, 
+  FiClock, 
+  FiTrendingUp, 
+  FiPlus, 
+  FiArrowRight, 
+  FiBookOpen,
+  FiActivity
+} from 'react-icons/fi';
 
-import { signOut } from 'next-auth/react';
+// Quick Action Component
+interface QuickActionProps {
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  onClick: () => void;
+  variant?: 'primary' | 'default';
+}
+
+const QuickAction: React.FC<QuickActionProps> = ({ 
+  title, 
+  description, 
+  icon, 
+  onClick, 
+  variant = 'default' 
+}) => (
+  <Card hoverable className="h-full border-none shadow-lg shadow-black/5" onClick={onClick}>
+    <CardContent className="p-6 flex flex-col h-full">
+      <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+        variant === 'primary' ? 'bg-primary/10 text-primary' : 'bg-secondary text-secondary-foreground'
+      }`}>
+        {icon}
+      </div>
+      <h4 className="font-bold text-lg mb-2">{title}</h4>
+      <p className="text-sm text-secondary-foreground mb-6 flex-1">{description}</p>
+      <Button variant={variant === 'primary' ? 'primary' : 'outline'} size="sm" className="w-fit">
+        Get Started <FiArrowRight className="ml-2" />
+      </Button>
+    </CardContent>
+  </Card>
+);
 
 export default function Dashboard() {
-  const { user, userRole, isAdmin, isUser, hasRolePermission, isAuthenticated, isLoading } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
   const router = useRouter();
 
-  // Show loading state while checking authentication to prevent content flash
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col gap-5 items-center justify-center">
-        <div className="text-lg text-blue-600">Loading...</div>
-        <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
+      <div className="min-h-screen flex flex-col gap-5 items-center justify-center bg-background">
+        <div className="text-lg font-medium text-primary animate-pulse">Initializing Lib-Sek...</div>
+        <div className="relative border-4 border-primary/20 border-t-primary rounded-full w-16 h-16 animate-spin">
+          <div className="absolute inset-0 border-4 border-transparent border-b-primary/40 rounded-full animate-spin-slow"></div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-        <div className="px-4 sm:px-0">
-          <div className="border-4 border-dashed border-gray-200 rounded-lg p-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-6">
-              Dashboard
-            </h1>
-            
-            <div className="mb-6">
-              {isAuthenticated ? (
-                <>
-                  <p className="text-lg text-gray-600">
-                    Welcome, {user?.name}!
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    Your role: <span className="font-semibold">{userRole}</span>
-                  </p>
-                </>
-              ) : (
-                <>
-                  <p className="text-lg text-gray-600">
-                    Welcome, Guest!
-                  </p>
-                  <p className="text-sm text-gray-500">
-                    You are viewing this page as a guest. <button title="Sign in" onClick={() => router.push('/auth/signin')} className="text-blue-600 hover:underline">Sign in</button> for full access.
-                  </p>
-                </>
-              )}
-            </div>
-
-            {/* Library Navigation */}
-            <div className="mb-6 flex flex-wrap gap-3">
-              <button
-                title="Browse Lib-Sek Book"
-                onClick={() => router.push('/library')}
-                className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-green-600 text-sm font-medium rounded-md text-white bg-green-500 hover:bg-green-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-green-600"
-              >
-                📚 Browse Library
-              </button>
-              {isAuthenticated && hasRolePermission('read', 'borrow-history') && (
-                <button
-                  title="View Borrow History"
-                  onClick={() => router.push('/borrow-history')}
-                  className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-blue-600 text-sm font-medium rounded-md text-white bg-blue-500 hover:bg-blue-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-blue-600"
-                >
-                  📖 Borrow History
-                </button>
-              )}
-              {isAuthenticated && hasRolePermission('manage', 'inventory') && (
-                <button
-                  title='Manage Lib-Sek Books'
-                  onClick={() => router.push('/book-management')}
-                  className="inline-flex items-center px-4 py-2 shadow-lg border-2 border-purple-600 text-sm font-medium rounded-md text-white bg-purple-500 hover:bg-purple-600 transition-colors focus:ring-2 focus:ring-offset-2 focus:ring-purple-600"
-                >
-                  📝 Manage Books
-                </button>
-              )}
-            </div>
-
-            {/* Guest Content - Always Visible */}
-            <div className="space-y-4">
-              <div className="bg-white p-4 rounded-lg shadow">
-                <h2 className="text-xl font-semibold mb-2">📚 Library Catalog</h2>
-                <p className="text-gray-600">Browse our collection of books available for reading.</p>
-              </div>
-
-              {/* Authenticated User Content */}
-              {isAuthenticated && isUser && (
-                <div className="bg-blue-50 p-4 rounded-lg shadow">
-                  <h2 className="text-xl font-semibold mb-2">📖 Member Features</h2>
-                  <p className="text-gray-600">As a library member, you can:</p>
-                  {hasRolePermission('borrow', 'books') && (
-                    <p className="text-sm text-blue-600 mt-2">✓ Borrow available books</p>
-                  )}
-                  {hasRolePermission('return', 'books') && (
-                    <p className="text-sm text-blue-600 mt-2">✓ Return borrowed books</p>
-                  )}
-                  {hasRolePermission('read', 'borrow-history') && (
-                    <p className="text-sm text-blue-600 mt-2">✓ View your borrowing history</p>
-                  )}
-                </div>
-              )}
-
-              {/* Admin Only Content */}
-              {isAuthenticated && isAdmin && (
-                <div className="bg-red-50 p-4 rounded-lg shadow">
-                  <h2 className="text-xl font-semibold mb-2">🔧 Librarian Tools</h2>
-                  <p className="text-gray-600">As a librarian, you have full system access:</p>
-                  <div className="mt-4 space-y-2">
-                    <p className="text-sm text-red-600">✓ Manage book inventory</p>
-                    <p className="text-sm text-red-600">✓ Add, edit, and delete books</p>
-                    <p className="text-sm text-red-600">✓ Manage borrowing records</p>
-                    <p className="text-sm text-red-600">✓ Apply and clear fines</p>
-                    <p className="text-sm text-red-600">✓ User management</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Guest Only Message */}
-              {!isAuthenticated && (
-                <div className="bg-green-50 p-4 rounded-lg shadow">
-                  <h2 className="text-xl font-semibold mb-2">Guest Access</h2>
-                  <p className="text-gray-600">You&apos;re currently viewing as a guest. Sign in to access more features like:</p>
-                  <ul className="mt-2 text-sm text-green-600 space-y-1">
-                    <li>• Borrowing books from our collection</li>
-                    <li>• Viewing your borrowing history</li>
-                    <li>• Managing your account</li>
-                    <li>• Receiving personalized recommendations</li>
-                  </ul>
-                </div>
-              )}
-            </div>
-
-            {/* Navigation */}
-            <div className="mt-8 space-x-4">
-              {isAuthenticated && isAdmin && (
-                <button
-                  title='Admin Panel'
-                  onClick={() => router.push('/admin')}
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-red-600 hover:bg-red-700 hover:cursor-pointer"
-                >
-                  Admin Panel
-                </button>
-              )}
-              {isAuthenticated ? (
-                <button
-                  title='Sign Out'
-                  onClick={() => signOut({ callbackUrl: '/auth/signin' })}
-                  className="inline-flex items-center px-4 py-2 border border-gray-500 text-sm shadow-lg font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 hover:cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                >
-                  Sign Out
-                </button>
-              ) : (
-                <button
-                  title='Sign In'
-                  onClick={() => router.push('/auth/signin')}
-                  className="inline-flex items-center px-4 py-2 border border-indigo-700 shadow-lg text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 hover:cursor-pointer focus:ring-2 focus:ring-offset-2 focus:ring-indigo-700"
-                >
-                  Sign In
-                </button>
-              )}
-            </div>
+    <DashboardLayout>
+      {/* Hero Welcome Section */}
+      <section className="relative overflow-hidden rounded-3xl bg-primary px-8 py-12 text-primary-foreground shadow-2xl shadow-primary/20 ring-1 ring-white/10 mt-2">
+        <div className="relative z-10 max-w-2xl">
+          <h1 className="text-4xl font-extrabold tracking-tight mb-4">
+            Welcome back, <span className="text-white/90">{user?.name || 'Researcher'}</span>!
+          </h1>
+          <p className="text-primary-foreground/80 text-lg mb-8 leading-relaxed">
+            Your personal digital library is ready. Explore over <span className="text-white font-bold">12,000+</span> titles, 
+            manage your collections, and track your reading journey with Lib-Sek Books.
+          </p>
+          <div className="flex flex-wrap gap-4">
+            <Button variant="secondary" onClick={() => router.push('/library')} className="font-bold">
+              <FiBookOpen className="mr-2" /> Browse Library
+            </Button>
+            {isAdmin && (
+              <Button variant="success" onClick={() => router.push('/add-books')} className="bg-white/10 hover:bg-white/20 border-white/20 text-white font-bold">
+                <FiPlus className="mr-2" /> Add New Book
+              </Button>
+            )}
           </div>
         </div>
+        {/* Abstract Background Shapes */}
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-white/10 rounded-full blur-3xl"></div>
+        <div className="absolute bottom-0 left-1/2 -ml-20 -mb-20 w-64 h-64 bg-black/10 rounded-full blur-2xl"></div>
+        <FiBook className="absolute -bottom-10 right-10 text-[20rem] text-white/5 -rotate-12 pointer-events-none" />
+      </section>
+
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard 
+          title="Total Collections" 
+          value="12,456" 
+          icon={<FiBook />} 
+          trend={{ value: 12, isUp: true }}
+          description="Available for borrowing"
+        />
+        <StatCard 
+          title="Active Members" 
+          value="1,280" 
+          icon={<FiUsers />} 
+          trend={{ value: 5, isUp: true }}
+          description="Registered researchers"
+        />
+        <StatCard 
+          title="Borrowed Books" 
+          value="432" 
+          icon={<FiClock />} 
+          description="Currently in circulation"
+        />
+        <StatCard 
+          title="Weekly Growth" 
+          value="14.2%" 
+          icon={<FiTrendingUp />} 
+          trend={{ value: 2.1, isUp: true }}
+          description="User engagement rate"
+        />
       </div>
-    </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Main Content Area */}
+        <div className="lg:col-span-2 space-y-8">
+          <section>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-bold flex items-center">
+                <FiActivity className="mr-2 text-primary" /> Quick Actions
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <QuickAction 
+                title="Browse Library" 
+                description="Explore our vast collection of digital books and research materials across all genres."
+                icon={<FiBookOpen className="text-2xl" />}
+                variant="primary"
+                onClick={() => router.push('/library')}
+              />
+              <QuickAction 
+                title="Borrow History" 
+                description="View your past and current borrowings, return dates, and reading progress."
+                icon={<FiClock className="text-2xl" />}
+                onClick={() => router.push('/borrow-history')}
+              />
+            </div>
+          </section>
+
+          {/* Recent Activity Mockup */}
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <h3 className="font-bold text-lg">System Updates</h3>
+              <Button variant="ghost" size="sm" className="text-xs">View All</Button>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {[
+                { type: 'Update', info: 'Open Library sync completed', time: '2 hours ago', icon: <FiTrendingUp className="text-green-500" /> },
+                { type: 'Security', info: 'All accounts migrated to v2 auth', time: 'Yesterday', icon: <FiActivity className="text-blue-500" /> },
+                { type: 'Inventory', info: 'Added 120 new technical books', time: '2 days ago', icon: <FiPlus className="text-purple-500" /> }
+              ].map((activity, i) => (
+                <div key={i} className="flex items-start space-x-4">
+                  <div className="p-2 bg-muted rounded-lg">{activity.icon}</div>
+                  <div className="flex-1">
+                    <p className="text-sm font-bold">{activity.info}</p>
+                    <p className="text-xs text-secondary-foreground mt-1">{activity.type} • {activity.time}</p>
+                  </div>
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Sidebar/Notifications */}
+        <div className="space-y-8">
+          <Card variant="glass" className="bg-primary/5 border-primary/10">
+            <CardHeader>
+              <h3 className="font-bold">Librarian&apos;s Note</h3>
+            </CardHeader>
+            <CardContent>
+              <div className="bg-background/50 rounded-xl p-4 border border-primary/10 mb-4 italic text-sm text-balance">
+                &quot;Welcome to the new Lib-Sek experience. We&apos;ve enhanced the library to be more interactive and easier to navigate. Happy reading!&quot;
+              </div>
+              <p className="text-xs text-secondary-foreground font-medium">- Mr. Sekyi, Lead Librarian</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <h3 className="font-bold">Member Privileges</h3>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[
+                'Unlimited Digital Downloads',
+                'Advanced Search Filters',
+                'Book Request Management',
+                'Reading Progress Tracking'
+              ].map((item, i) => (
+                <div key={i} className="flex items-center text-sm font-medium">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary mr-3"></div>
+                  {item}
+                </div>
+              ))}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    </DashboardLayout>
   );
 }

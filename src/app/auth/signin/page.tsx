@@ -3,8 +3,10 @@
 import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import Image from 'next/image';
+import { FiBookOpen, FiUser, FiMail, FiLock } from 'react-icons/fi';
 import { useAuth } from '@/hooks/useAuth';
+import { Button } from '@/components/ui/Button';
+import { Input } from '@/components/ui/Input';
 
 export default function SignIn() {
   const [email, setEmail] = useState('');
@@ -117,163 +119,146 @@ export default function SignIn() {
   };
 
   return (
-    <div className="min-h-screen grid md:grid-cols-2 justify-center bg-blue-100">
-      <div className='hidden md:inline md:border-r-2 border-blue-300 relative'>
+    <div className="relative min-h-screen w-full flex items-center justify-center p-4 md:p-8 overflow-hidden">
+      {/* Fullscreen Video Background */}
+      <div className="fixed inset-0 z-0">
         <video
           src="/books.mp4"
           autoPlay
           muted
           loop
           playsInline
-          className="absolute inset-0 h-full w-full object-cover z-0"
+          className="h-full w-full object-cover"
         />
-        
-        <Image src="/android-chrome-192x192.png" alt="Logo" width={100} height={100} className="absolute left-1/2 top-1/3 transform -translate-x-1/2 -translate-y-1/2 object-cover" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <h1 className="text-6xl font-bold text-blue-400">Lib-Sek Books</h1>
-          <p className="text-blue-400 text-2xl">Welcome to Lib-Sek Books</p>
-        </div>
+        {/* Subtle overlay to improve text contrast while keeping video clear */}
+        <div className="absolute inset-0 bg-black/20 dark:bg-black/40 backdrop-brightness-75 md:backdrop-brightness-100" />
       </div>
-      <div className="flex flex-col items-center justify-center w-full">
-        <div className="w-[90%] md:w-[70%] flex items-center">
-          
-          <form className="w-full space-y-6" onSubmit={handleSubmit}>
-            <h2 className="p-4 text-center text-3xl font-extrabold text-gray-900">
-              {isRegisterMode ? 'Create your account' : 'Sign in to your account'}
-            </h2>
-            <div className='flex flex-col gap-2'>
-              {isRegisterMode && (
-                <>
-                  <div className='flex gap-2'>
-                  <input
-                    id="firstName"
-                    name="firstName"
-                    type="text"
-                    required={isRegisterMode}
-                    className="appearance-none relative block w-full px-3 py-2 bg-white border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10 sm:text-sm"
-                    placeholder="First Name"
-                    value={firstName}
-                    onChange={(e) => {
-                      setFirstName(e.target.value);
-                      setError('');
-                    }}
-                  />
-                  <input
-                    id="lastName"
-                    name="lastName"
-                    type="text"
-                    required={isRegisterMode}
-                    className="appearance-none relative block w-full px-3 py-2 bg-white border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10 sm:text-sm"
-                    placeholder="Last Name"
-                    value={lastName}
-                    onChange={(e) => {
-                      setLastName(e.target.value);
-                      setError('');
-                    }}
-                  />
-                  </div>
-                </>
-              )}
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                className="appearance-none relative block w-full px-3 py-2 bg-white border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email address"
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  setError('');
-                }}
-              />
-              <div className='flex gap-2'>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                required
-                className="appearance-none relative block w-full px-3 py-2 bg-white border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setError('');
-                }}
-              />
-              {isRegisterMode && (
-                <>
-                  <input
-                id="confirmPassword"
-                name="confirmPassword"
-                type="password"
-                required
-                className="appearance-none relative block w-full px-3 py-2 bg-white border-2 border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Confirm Password"
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value);
-                  setError('');
-                }}
-              />
-                </>
-              )}
+
+      {/* Auth Card */}
+      <div className="relative z-10 w-full max-w-[450px] animate-in fade-in zoom-in-95 duration-500">
+        <div className="glass-card p-6 md:p-10 shadow-2xl">
+          <div className="flex flex-col items-center mb-8">
+            <div className="w-16 h-16 bg-primary/20 rounded-2xl flex items-center justify-center text-primary mb-4 shadow-xl border border-primary/20 animate-bounce-slow">
+              <FiBookOpen className="text-3xl" />
+            </div>
+            <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-foreground text-center">
+              Lib-Sek <span className="text-primary">Books</span>
+            </h1>
+            <p className="text-secondary-foreground text-xs md:text-sm font-medium mt-1 uppercase tracking-widest text-center">
+              {isRegisterMode ? 'Join our community' : 'Welcome back'}
+            </p>
+          </div>
+
+          <form className="space-y-4 md:space-y-5" onSubmit={handleSubmit}>
+            {isRegisterMode && (
+              <div className="grid grid-cols-2 gap-3">
+                <Input
+                  label="First Name"
+                  required
+                  placeholder="John"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  leftIcon={<FiUser />}
+                />
+                <Input
+                  label="Last Name"
+                  required
+                  placeholder="Doe"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  leftIcon={<FiUser />}
+                />
               </div>
-
-              {error && (
-              <div className="text-red-600 text-sm">{error}</div>
             )}
-            </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-[82%] mx-auto shadow-2xl flex justify-center py-2 px-4 border-2 border-blue-700 text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-              >
-                {loading ? (
-                  <div className="flex items-center gap-2">
-                    <div className='flex h-4 w-4 rounded-full border-t-2 border-blue-300 animate-spin'></div>
-                    <div>{isRegisterMode ? 'Creating Account' : 'Signing in'}</div>
-                  </div>
-                ) : (
-                  <div>{isRegisterMode ? 'Register' : 'Sign in'}</div>
-                )}
-              </button>
-            </div>
+            <Input
+              label="Email Address"
+              type="email"
+              required
+              placeholder="name@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              leftIcon={<FiMail />}
+            />
 
-            <div className="flex items-center justify-center">
-              <div className="flex-1 h-px bg-blue-500"></div>
-              <span className="px-4 text-sm text-blue-500">
-                {isRegisterMode ? 'Already Have An Account?' : "Don't Have An Account Yet?"}
-              </span>
-              <div className="flex-1 h-px bg-blue-500"></div>
-            </div>
+            <Input
+              label="Password"
+              type="password"
+              required
+              placeholder="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              leftIcon={<FiLock />}
+            />
 
-            <div className="mt-4 flex gap-4 items-center justify-center">
-              <button
-                type="button"
-                onClick={() => router.push('/dashboard')}
-                className="group relative w-[40%] flex justify-center shadow-lg py-2 px-4 border-2 border-gray-500 text-sm font-medium rounded-md text-gray-900 bg-gray-200 hover:bg-gray-300 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-              >
-                Visit as Guest
-              </button>
-              <button
-                type="button"
-                onClick={toggleMode}
-                className="group relative w-[40%] flex justify-center shadow-lg py-2 px-4 border-2 border-green-500 text-sm font-medium rounded-md text-gray-900 bg-green-200 hover:bg-green-300 hover:cursor-pointer focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-              >
-                {isRegisterMode ? 'Sign in' : 'Register'}
-              </button>
-            </div>
+            {isRegisterMode && (
+              <Input
+                label="Confirm Password"
+                type="password"
+                required
+                placeholder="password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                leftIcon={<FiLock />}
+              />
+            )}
 
+            {error && (
+              <div className="p-3 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-[10px] md:text-xs font-bold animate-shake">
+                {error}
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              isLoading={loading}
+              className="w-full py-4 text-sm font-bold shadow-xl shadow-primary/20 transition-all"
+            >
+              {isRegisterMode ? 'Create Account' : 'Sign In'}
+            </Button>
           </form>
-        </div>
-            <div className="absolute bottom-5 left-5 md:left-1/2 transform translate-x-5 w-fit text-sm text-gray-600">
-              <p>Demo accounts:</p>
-              <p>Admin: admin@example.com / secret</p>
-              <p>User: user@example.com / secret</p>
+
+          <div className="relative my-8">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border/50"></div>
             </div>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-black">
+              <span className="bg-transparent px-2 text-secondary-foreground/60">Or continue as</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => router.push('/dashboard')}
+              className="py-2.5 text-xs font-bold glass"
+            >
+              Guest User
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={toggleMode}
+              className="py-2.5 text-xs font-bold"
+            >
+              {isRegisterMode ? 'Sign In' : 'Register'}
+            </Button>
+          </div>
+
+          <div className="mt-8 pt-6 border-t border-border/30">
+            <div className="flex flex-col gap-1 text-[10px] font-medium text-secondary-foreground/70">
+              <p className="flex justify-between items-center">
+                <span>Admin Demo</span>
+                <span className="font-mono text-primary/80">admin@example.com / secret</span>
+              </p>
+              <p className="flex justify-between items-center">
+                <span>User Demo</span>
+                <span className="font-mono text-primary/80">user@example.com / secret</span>
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

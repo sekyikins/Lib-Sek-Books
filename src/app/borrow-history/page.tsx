@@ -5,9 +5,15 @@ import { useAuth } from '@/hooks/useAuth';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { BorrowRecord } from '@/types/books';
 import { Role } from '@/types/auth';
+import { DashboardLayout } from '@/components/layout/DashboardLayout';
+import { Card, CardHeader } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { FiClock, FiCheckCircle, FiAlertCircle, FiBookOpen, FiCalendar, FiDollarSign, FiCornerUpLeft, FiArrowLeft } from 'react-icons/fi';
+import { useRouter } from 'next/navigation';
 
 export default function BorrowHistoryPage() {
   const { isAuthenticated, isLoading, user, hasRolePermission } = useAuth();
+  const router = useRouter();
   const [borrowRecords, setBorrowRecords] = useState<BorrowRecord[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -73,126 +79,172 @@ export default function BorrowHistoryPage() {
           : record
       )
     );
-    alert('Book returned successfully!');
+    // In a real app, this would be a toast notification
   };
 
-  const getStatusColor = (status: string) => {
+  const getStatusConfig = (status: string) => {
     switch (status) {
       case 'returned':
-        return 'bg-green-100 text-green-800';
+        return { 
+          color: 'bg-green-500/10 text-green-600 border-green-500/20', 
+          icon: <FiCheckCircle className="mr-1.5" />,
+          label: 'Returned'
+        };
       case 'borrowed':
-        return 'bg-blue-100 text-blue-800';
+        return { 
+          color: 'bg-primary/10 text-primary border-primary/20', 
+          icon: <FiBookOpen className="mr-1.5" />,
+          label: 'Active'
+        };
       case 'overdue':
-        return 'bg-red-100 text-red-800';
+        return { 
+          color: 'bg-destructive/10 text-destructive border-destructive/20', 
+          icon: <FiAlertCircle className="mr-1.5" />,
+          label: 'Overdue'
+        };
       default:
-        return 'bg-gray-100 text-gray-800';
+        return { 
+          color: 'bg-muted/10 text-secondary-foreground border-muted/20', 
+          icon: <FiClock className="mr-1.5" />,
+          label: status 
+        };
     }
   };
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col gap-5 items-center justify-center">
-        <div className="text-lg text-blue-600">Loading...</div>
-        <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
+      <div className="min-h-screen flex flex-col gap-5 items-center justify-center bg-background">
+        <div className="text-lg font-medium text-primary animate-pulse">Retrieving History...</div>
+        <div className="border-4 border-primary/20 border-t-primary rounded-full w-12 h-12 animate-spin"></div>
       </div>
     );
   }
 
   return (
     <ProtectedRoute requiredRole={Role.USER}>
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto py-6 sm:px-6 lg:px-8">
-          <div className="px-4 py-6 sm:px-0">
-            <div className="mb-8">
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Borrow History</h1>
-              <p className="text-lg text-gray-600">View your borrowing records and manage returns</p>
-            </div>
-
-            <div className="bg-white shadow rounded-lg">
-              <div className="px-4 py-5 sm:p-6">
-                {loading ? (
-                  <div className="text-center py-12">
-                    <div className="text-lg text-gray-600">Loading borrow history...</div>
-                  </div>
-                ) : borrowRecords.length === 0 ? (
-                  <div className="text-center py-12">
-                    <p className="text-gray-500 text-lg">No borrow records found.</p>
-                  </div>
-                ) : (
-                  <div className="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
-                    <table className="min-w-full divide-y divide-gray-300">
-                      <thead className="bg-gray-50">
-                        <tr>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Book ID
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Borrow Date
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Due Date
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Return Date
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Status
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Fine
-                          </th>
-                          <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                            Actions
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody className="bg-white divide-y divide-gray-200">
-                        {borrowRecords.map((record) => (
-                          <tr key={record.id}>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                              #{record.bookId}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {record.borrowDate.toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {record.dueDate.toLocaleDateString()}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {record.returnDate ? record.returnDate.toLocaleDateString() : '-'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap">
-                              <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(record.status)}`}>
-                                {record.status}
-                              </span>
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                              {record.fine ? `$${record.fine.toFixed(2)}` : '-'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                              {record.status === 'borrowed' && hasRolePermission('return', 'books') && (
-                                <button
-                                  onClick={() => handleReturn(record.id)}
-                                  className="text-indigo-600 hover:text-indigo-900"
-                                >
-                                  Return Book
-                                </button>
-                              )}
-                              {record.status === 'overdue' && (
-                                <span className="text-red-600 text-xs">Please return book</span>
-                              )}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                )}
-              </div>
-            </div>
+      <DashboardLayout>
+        <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 mt-2">
+          <div className="flex-1">
+            <h1 className="text-4xl font-extrabold tracking-tight text-foreground mb-2">
+              Borrow <span className="text-primary">History</span>
+            </h1>
+            <p className="text-secondary-foreground font-medium">
+              Track your reading journey and manage active digital loans.
+            </p>
           </div>
+          <Button variant="outline" onClick={() => router.replace('/library')} className="rounded-xl">
+            <FiArrowLeft className="mr-2" /> Back to Library
+          </Button>
         </div>
-      </div>
+
+        <Card className="border-none shadow-xl shadow-black/5 overflow-hidden">
+          <CardHeader className="p-6 bg-muted/20 border-b border-border flex items-center justify-between">
+            <h3 className="font-bold text-lg text-foreground flex items-center gap-2">
+              <FiClock className="text-primary" /> Loan Records
+            </h3>
+            <span className="text-xs font-bold px-2.5 py-1 bg-primary/10 text-primary rounded-lg border border-primary/20">
+              {borrowRecords.length} TOTAL RECORDS
+            </span>
+          </CardHeader>
+          
+          {loading ? (
+            <div className="flex flex-col items-center justify-center py-24 space-y-4">
+              <div className="w-10 h-10 border-4 border-primary/20 border-t-primary rounded-full animate-spin"></div>
+              <p className="text-secondary-foreground font-medium">Loading history...</p>
+            </div>
+          ) : borrowRecords.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-24 text-center px-6">
+              <div className="w-16 h-16 bg-muted/50 rounded-full flex items-center justify-center text-secondary-foreground mb-4">
+                <FiBookOpen className="w-8 h-8" />
+              </div>
+              <h3 className="text-xl font-bold text-foreground mb-2">No Records Found</h3>
+              <p className="text-secondary-foreground max-w-xs mx-auto">
+                You haven&apos;t borrowed any books yet. Explore our collection to start reading!
+              </p>
+              <Button variant="primary" onClick={() => router.push('/library')} className="mt-6 rounded-xl">
+                Browse Library
+              </Button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-muted/30 border-b border-border">
+                    <th className="px-6 py-4 text-xs font-bold text-secondary-foreground uppercase tracking-wider">Book Identity</th>
+                    <th className="px-6 py-4 text-xs font-bold text-secondary-foreground uppercase tracking-wider">Dates</th>
+                    <th className="px-6 py-4 text-xs font-bold text-secondary-foreground uppercase tracking-wider">Loan Status</th>
+                    <th className="px-6 py-4 text-xs font-bold text-secondary-foreground uppercase tracking-wider">Fines</th>
+                    <th className="px-6 py-4 text-right text-xs font-bold text-secondary-foreground uppercase tracking-wider">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {borrowRecords.map((record) => {
+                    const status = getStatusConfig(record.status);
+                    return (
+                      <tr key={record.id} className="group hover:bg-muted/10 transition-colors">
+                        <td className="px-6 py-5">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-lg bg-muted flex items-center justify-center text-secondary-foreground font-bold text-xs">
+                              ID
+                            </div>
+                            <span className="font-bold text-foreground">#{record.bookId}</span>
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center text-xs font-medium text-secondary-foreground">
+                              <FiCalendar className="mr-1.5 w-3 h-3" /> Borrowed: {record.borrowDate.toLocaleDateString()}
+                            </div>
+                            <div className="flex items-center text-xs font-bold text-foreground">
+                              <FiClock className="mr-1.5 w-3 h-3 text-primary" /> Due: {record.dueDate.toLocaleDateString()}
+                            </div>
+                            {record.returnDate && (
+                              <div className="flex items-center text-xs font-medium text-green-600">
+                                <FiCheckCircle className="mr-1.5 w-3 h-3" /> Returned: {record.returnDate.toLocaleDateString()}
+                              </div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-5">
+                          <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold border transition-all ${status.color}`}>
+                            {status.icon}
+                            {status.label}
+                          </span>
+                        </td>
+                        <td className="px-6 py-5 font-mono text-sm">
+                          {record.fine ? (
+                            <span className="text-destructive font-bold flex items-center">
+                              <FiDollarSign className="mr-0.5" />{record.fine.toFixed(2)}
+                            </span>
+                          ) : (
+                            <span className="text-secondary-foreground">None</span>
+                          )}
+                        </td>
+                        <td className="px-6 py-5 text-right">
+                          {record.status === 'borrowed' && hasRolePermission('return', 'books') ? (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleReturn(record.id)}
+                              className="rounded-lg hover:bg-primary/10 hover:text-primary text-xs font-bold"
+                            >
+                              <FiCornerUpLeft className="mr-1.5" /> Return Now
+                            </Button>
+                          ) : record.status === 'overdue' ? (
+                            <span className="text-destructive text-xs font-black uppercase tracking-tighter animate-pulse">Return Immediately</span>
+                          ) : (
+                            <span className="text-secondary-foreground text-xs font-bold uppercase tracking-widest">Completed</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </Card>
+      </DashboardLayout>
     </ProtectedRoute>
   );
 }
