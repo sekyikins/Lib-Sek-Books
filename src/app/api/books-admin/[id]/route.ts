@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { readBooks, writeBooks, type BookEntry } from '@/lib/data-store';
+import { readBooks, writeBooks } from '@/lib/data-store';
 
 
 
@@ -13,11 +13,11 @@ function parseIndex(raw: string): number | null {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ index: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { index } = await params;
-    const bookIndex = parseIndex(index);
+    const { id } = await params;
+    const bookIndex = parseIndex(id);
     if (bookIndex === null) {
       return NextResponse.json({ error: 'Invalid book index.' }, { status: 400 });
     }
@@ -36,11 +36,11 @@ export async function GET(
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ index: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { index } = await params;
-    const bookIndex = parseIndex(index);
+    const { id } = await params;
+    const bookIndex = parseIndex(id);
     if (bookIndex === null) {
       return NextResponse.json({ error: 'Invalid book index.' }, { status: 400 });
     }
@@ -79,11 +79,11 @@ export async function PUT(
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ index: string }> }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { index } = await params;
-    const bookIndex = parseIndex(index);
+    const { id } = await params;
+    const bookIndex = parseIndex(id);
     if (bookIndex === null) {
       return NextResponse.json({ error: 'Invalid book index.' }, { status: 400 });
     }
