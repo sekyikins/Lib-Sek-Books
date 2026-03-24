@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   ];
 
   return (
-    <aside className={`fixed left-0 top-0 h-screen w-64 bg-accent border-r border-ring flex flex-col z-50 transition-transform duration-500 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+    <aside className={`fixed left-0 top-0 h-dvh w-64 bg-accent border-r border-ring flex flex-col z-50 transition-transform duration-500 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}>
       <div className="flex items-start justify-between px-4 py-3 md:py-5 border-b border-ring">
         <div className="flex items-center space-x-3">
           <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center text-primary">
@@ -89,7 +89,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         </Button>
       </div>
 
-      <nav className="flex-1 space-y-2 px-4 mt-8">
+      <nav className="flex-1 space-y-2 px-4 mt-8 overflow-y-auto">
         <div className="text-[10px] font-bold text-secondary-foreground uppercase tracking-[0.2em] px-4 mb-4">
           Main Menu
         </div>

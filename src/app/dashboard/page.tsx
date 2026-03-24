@@ -56,7 +56,7 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col gap-5 items-center justify-center bg-background">
+      <div className="min-h-full flex flex-col gap-5 items-center justify-center bg-background">
         <div className="text-lg font-medium text-primary animate-pulse">Initializing Lib-Sek...</div>
         <div className="relative border-4 border-primary/20 border-t-primary rounded-full w-16 h-16 animate-spin">
           <div className="absolute inset-0 border-4 border-transparent border-b-primary/40 rounded-full animate-spin-slow"></div>

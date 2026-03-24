@@ -36,7 +36,7 @@ function BookDetailsContent() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex flex-col gap-5 items-center justify-center bg-background">
+      <div className="min-h-full flex flex-col gap-5 items-center justify-center bg-background">
         <div className="text-lg font-medium text-primary animate-pulse">Consulting the Librarian...</div>
         <div className="border-4 border-primary/20 border-t-primary rounded-full w-12 h-12 animate-spin"></div>
       </div>
@@ -45,7 +45,7 @@ function BookDetailsContent() {
 
   if (error || !book) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background px-6">
+      <div className="min-h-full flex items-center justify-center bg-background px-6">
         <Card className="max-w-md w-full border-destructive/20 shadow-2xl shadow-destructive/5 text-center p-8">
           <div className="w-16 h-16 bg-destructive/10 rounded-full flex items-center justify-center mx-auto text-destructive mb-6">
             <FiXCircle className="w-8 h-8" />
@@ -249,7 +249,7 @@ function BookDetailsContent() {
 export default function BookDetailsPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex flex-col gap-5 items-center justify-center bg-background">
+      <div className="min-h-full flex flex-col gap-5 items-center justify-center bg-background">
         <div className="border-4 border-primary/20 border-t-primary rounded-full w-12 h-12 animate-spin"></div>
       </div>
     }>

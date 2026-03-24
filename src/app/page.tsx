@@ -21,7 +21,7 @@ export default function Home() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-full flex items-center justify-center">
         <div className="text-lg">Loading...</div>
       </div>
     );

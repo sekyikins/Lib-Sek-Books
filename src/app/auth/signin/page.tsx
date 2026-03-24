@@ -30,7 +30,7 @@ export default function SignIn() {
   // Show loading state while checking authentication
   if (isLoading) {
     return (
-      <div className="min-h-screen flex flex-col gap-5 items-center justify-center">
+      <div className="min-h-full flex flex-col gap-5 items-center justify-center">
         <div className="text-lg text-blue-600">Loading...</div>
         <div className="border-4 border-blue-500 border-t-transparent rounded-full w-12 h-12 animate-spin"></div>
       </div>
@@ -119,7 +119,7 @@ export default function SignIn() {
   };
 
   return (
-    <div className="relative min-h-screen w-full flex items-center justify-center p-4 md:p-8 overflow-hidden">
+    <div className="relative min-h-full w-full flex items-center justify-center p-4 md:p-8 overflow-hidden">
       {/* Fullscreen Video Background */}
       <div className="fixed inset-0 z-0">
         <video
