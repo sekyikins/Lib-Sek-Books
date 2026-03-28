@@ -93,31 +93,31 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
   return (
     <>
       <header className="h-16 md:h-20 border-b border-ring px-4 md:px-8 flex items-center justify-between sticky top-0 z-40 backdrop-blur-lg">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 min-w-0">
         {/* Mobile Menu Toggle */}
         <Button 
           variant="ghost"
           size="icon"
           onClick={onMenuClick}
-          className="lg:hidden rounded-xl"
+          className="lg:hidden rounded-xl shrink-0"
         >
           <FiMenu className="text-xl" />
         </Button>
 
-        <div className="hidden sm:block text-left">
-          <h2 className="text-sm md:text-lg font-bold text-foreground capitalize line-clamp-1">
+        <div className="hidden sm:block text-left min-w-0">
+          <h2 className="text-sm md:text-lg font-bold text-foreground capitalize truncate">
             {capitalizedTitle}
           </h2>
-          <div className="flex items-center text-[10px] md:text-xs text-secondary-foreground uppercase tracking-widest">
+          <div className="flex items-center text-[10px] md:text-xs text-secondary-foreground uppercase tracking-widest truncate">
             <span>Home</span>
             <span className="mx-1.5 md:mx-2">/</span>
-            <span className="text-primary font-black">{capitalizedTitle}</span>
+            <span className="text-primary font-black truncate">{capitalizedTitle}</span>
           </div>
         </div>
       </div>
 
-      <div className="flex items-center space-x-3 md:space-x-6">
-        <div ref={searchRef} className="relative group block w-8 md:w-72 lg:w-96">
+      <div className="flex flex-1 items-center justify-end space-x-3 md:space-x-6 min-w-0 ml-4">
+        <div ref={searchRef} className="relative group block w-8 md:w-full md:max-w-72 lg:max-w-96 min-w-0">
           <div className="relative">
             <Button 
               variant="ghost"
@@ -219,7 +219,7 @@ export const Header: React.FC<HeaderProps> = ({ onMenuClick }) => {
           )}
         </div>
 
-        <div className="flex items-center space-x-2 md:space-x-4 border-l border-border pl-4 md:pl-6">
+        <div className="flex items-center space-x-2 md:space-x-4 border-l border-border pl-4 md:pl-6 shrink-0">
           {/* Theme Toggle Button */}
           <Button 
             variant="ghost"
